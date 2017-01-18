@@ -9,7 +9,7 @@ Add this to your application's `shard.yml`:
 ```yaml
 dependencies:
   appmonit-db:
-    github: [your-github-name]/appmonit-db
+    github: appmonit/appmonit-db
 ```
 
 ## Usage
@@ -41,4 +41,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [[your-github-name]](https://github.com/[your-github-name]) Benoist Claassen - creator, maintainer
+- [benoist](https://github.com/benoist]) Benoist Claassen - creator, maintainer
