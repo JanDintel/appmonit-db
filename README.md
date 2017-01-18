@@ -1,6 +1,6 @@
 # appmonit-db
 
-TODO: Write a description here
+This shard will contain the code used for the internal storage layer for Appmonit
 
 ## Installation
 
@@ -21,10 +21,10 @@ require "appmonit-db"
 
 ## File conventions
 
-**Collection**: /some-dir/collection-name
-**Shard**:      /some-dir/collection-name/[start-epoch]-[end-epoch]
-**ADB File**:   /some-dir/collection-name/[start-epoch]-[end-epoch]/[level]-[sequence].adb
-**WAL Files**:  /some-dir/collection-name/_0000000000[sequence].wal
+* **Collection**: /some-dir/collection-name
+* **Shard**:      /some-dir/collection-name/[start-epoch]-[end-epoch]
+* **ADB File**:   /some-dir/collection-name/[start-epoch]-[end-epoch]/[level]-[sequence].adb
+* **WAL Files**:  /some-dir/collection-name/_0000000000[sequence].wal
 
 
 ## Development
