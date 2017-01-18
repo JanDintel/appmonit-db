@@ -1,6 +1,7 @@
 # appmonit-db
 
-This shard will contain the code used for the internal storage layer for Appmonit
+This shard will contain the code used for the internal storage layer for Appmonit.
+This is pre Alpha stage, not used in production yet, expect lots of things to change.
 
 ## Installation
 
