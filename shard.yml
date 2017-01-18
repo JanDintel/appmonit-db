@@ -1,0 +1,20 @@
+name: appmonit-db
+version: 0.1.0
+
+authors:
+  - Benoist Claassen <benoist@appmon.it>
+
+crystal: 0.20.3
+
+dependencies:
+  encoding:
+    github: benoist/encoding-crystal
+    branch: master
+  snappy:
+    github: benoist/snappy-crystal
+    version: ">= 0.1.0"
+  msgpack:
+    github: benoist/msgpack-crystal
+    version: ">= 0.3.0"
+
+license: MIT

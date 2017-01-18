@@ -1,0 +1,9 @@
+/doc/
+/lib/
+/.crystal/
+/.shards/
+
+/shard.lock
+/log
+/tmp
+.travis.yml
