@@ -35,7 +35,7 @@ module Appmonit::DB
           io = IO::Memory.new(Snappy.inflate(encoded))
 
           column_name = io.gets(io.read_bytes(Int32)).to_s
-          @values[column_name] += Values.from_io(io)
+          @values[column_name].concat(Values.from_io(io))
         end
       end
     end

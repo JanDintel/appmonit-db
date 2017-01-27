@@ -20,21 +20,6 @@ module Appmonit::DB
       end
     end
 
-    def self.build(capacity : Int)
-      ary = self.new(capacity)
-      ary.size = (yield ary.to_unsafe).to_i
-      ary
-    end
-
-    def +(other : Values) forall U
-      new_size = size + other.size
-      self.class.build(new_size) do |buffer|
-        buffer.copy_from(@buffer, size)
-        (buffer + size).copy_from(other.to_unsafe, other.size)
-        new_size
-      end
-    end
-
     def self.from_io(io) : Values
       size = io.read_bytes(Int32)
       values = Values.new(size)

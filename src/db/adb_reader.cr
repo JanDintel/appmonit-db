@@ -113,7 +113,7 @@ module Appmonit::DB
 
       values = Values.new
       selected.each do |block_stat|
-        values += read_values(block_stat, min_time, max_time)
+        values.concat(read_values(block_stat, min_time, max_time))
       end
       values
     end
@@ -127,7 +127,7 @@ module Appmonit::DB
 
       values = Values.new
       selected.each do |block_stat|
-        values += read_values(block_stat, min_time, max_time)
+        values.concat(read_values(block_stat, min_time, max_time))
       end
       values
     end
