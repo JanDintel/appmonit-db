@@ -59,10 +59,10 @@ module Appmonit::DB
         file = File.open("/tmp/appmonit-db/my-collection/0-60/1-0.adb")
         file.seek(14, IO::Seek::Set)
 
-        checksum = file.read_bytes(Int64)
+        checksum = file.read_bytes(UInt32)
         buffer = Slice(UInt8).new(encoded.size)
         file.read_fully(buffer)
-        Zlib.crc32(encoded).should eq checksum
+        CRC32.checksum(encoded).should eq checksum
         buffer.should eq encoded
       end
     end
@@ -83,10 +83,10 @@ module Appmonit::DB
         file = File.open("/tmp/appmonit-db/my-collection/0-60/1-0.adb")
         file.seek(14, IO::Seek::Set)
 
-        checksum = file.read_bytes(Int64)
+        checksum = file.read_bytes(UInt32)
         buffer = Slice(UInt8).new(encoded.size)
         file.read_fully(buffer)
-        Zlib.crc32(encoded).should eq checksum
+        CRC32.checksum(encoded).should eq checksum
         buffer.should eq encoded
       end
 

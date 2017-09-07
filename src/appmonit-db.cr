@@ -1,5 +1,5 @@
 require "file_utils"
-require "zlib"
+require "crc32"
 
 require "./db/*"
 

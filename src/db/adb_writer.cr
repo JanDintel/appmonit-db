@@ -52,13 +52,13 @@ module Appmonit::DB
     def write_block(column_name : String, block_stat : BlockStat, block : Bytes)
       raise MissingLockException.new unless @locked
 
-      checksum = Zlib.crc32(block)
+      checksum = CRC32.checksum(block)
 
       file.write_bytes(checksum)
       file.write(block)
       file.flush
 
-      size = block.size + sizeof(UInt64)
+      size = block.size + sizeof(UInt32)
       offset = @bytes_written
       @bytes_written += size
 

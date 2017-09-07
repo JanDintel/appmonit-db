@@ -89,11 +89,11 @@ module Appmonit::DB
     def read_block(offset, size)
       @file.seek(offset, IO::Seek::Set)
 
-      checksum = @file.read_bytes(Int64)
-      buffer = Slice(UInt8).new(size - sizeof(Int64))
+      checksum = @file.read_bytes(UInt32)
+      buffer = Slice(UInt8).new(size - sizeof(UInt32))
       @file.read_fully(buffer)
 
-      raise ChecksumFailed.new if Zlib.crc32(buffer) != checksum
+      raise ChecksumFailed.new if CRC32.checksum(buffer) != checksum
 
       buffer
     end
