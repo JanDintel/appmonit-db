@@ -11,9 +11,7 @@ module Appmonit::DB
   alias ValueType = Int64 | Float64 | String | Bool | Array(String)
   alias ValuesType = Int64Values | Float64Values | BoolValues | StringValues | ArrayValues
 
-  COLLECTION_REGEX = /.*\/(?<collection>[^\\]+)\/.*/
-  SHARD_REGEX      = /.*\/(?<collection>[^\\]+)\/(?<start_time>\d+)-(?<end_time>\d+)\/.*/
-  ADB_REGEX        = /(?<root>.*)\/(?<collection>[^\\]+)\/(?<start_time>\d+)-(?<end_time>\d+)\/(?<level>\d+)-(?<sequence>\d+)\.adb/
+  ADB_REGEX = /(?<root>.*)\/(?<collection>\d+)\/(?<min_time>\d+)-(?<max_time>\d+)\.adb/
 
   @[Flags]
   enum EncodingType

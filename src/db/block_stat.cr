@@ -3,28 +3,26 @@ module Appmonit::DB
     getter size : Int32
     getter min_time : Time
     getter max_time : Time
-    property offset : Int32
-    property byte_size : Int32
+    property offset : Int64
 
     def self.from_io(io)
       type = EncodingType.from_value(io.read_bytes(Int32))
-      offset = io.read_bytes(Int32)
-      byte_size = io.read_bytes(Int32)
+      offset = io.read_bytes(Int64)
       size = io.read_bytes(Int32)
       min_time = Time.epoch(io.read_bytes(Int64))
       max_time = Time.epoch(io.read_bytes(Int64))
 
       case type
       when EncodingType::Int64
-        BlockStat::Int64Values.from_io(io, offset, byte_size, size, min_time, max_time)
+        BlockStat::Int64Values.from_io(io, offset, size, min_time, max_time)
       when EncodingType::Float64
-        BlockStat::Float64Values.from_io(io, offset, byte_size, size, min_time, max_time)
+        BlockStat::Float64Values.from_io(io, offset, size, min_time, max_time)
       when EncodingType::String
-        BlockStat::StringValues.from_io(io, offset, byte_size, size, min_time, max_time)
+        BlockStat::StringValues.from_io(io, offset, size, min_time, max_time)
       when EncodingType::Bool
-        BlockStat::BoolValues.new(offset, byte_size, size, min_time, max_time)
+        BlockStat::BoolValues.new(offset, size, min_time, max_time)
       when EncodingType::Array
-        BlockStat::ArrayValues.new(offset, byte_size, size, min_time, max_time)
+        BlockStat::ArrayValues.new(offset, size, min_time, max_time)
       else
         raise "Invalid encoding type"
       end
@@ -55,16 +53,14 @@ module Appmonit::DB
       {min_time, start_time}.max <= {max_time, end_time}.min
     end
 
-    def update(offset, byte_size)
-      @offset = offset
-      @byte_size = byte_size
+    def update(offset)
+      @offset = offset.to_i64
       self
     end
 
     def to_io(io)
       io.write_bytes(encoding_type.value)
       io.write_bytes(offset)
-      io.write_bytes(byte_size)
       io.write_bytes(size)
       io.write_bytes(min_time.epoch)
       io.write_bytes(max_time.epoch)
@@ -74,12 +70,12 @@ module Appmonit::DB
   struct BlockStat::BoolValues
     include BlockStat
 
-    def initialize(@offset, @byte_size, @size, @min_time, @max_time)
+    def initialize(offset, @size, @min_time, @max_time)
+      @offset = offset.to_i64
     end
 
     def initialize(values : DB::BoolValues)
-      @offset = 0
-      @byte_size = 0
+      @offset = 0_i64
       @size = values.size
       first_value = values[0]
       @min_time = first_value.created_at
@@ -102,12 +98,12 @@ module Appmonit::DB
   struct BlockStat::ArrayValues
     include BlockStat
 
-    def initialize(@offset, @byte_size, @size, @min_time, @max_time)
+    def initialize(offset, @size, @min_time, @max_time)
+      @offset = offset.to_i64
     end
 
     def initialize(values : DB::ArrayValues)
-      @offset = 0
-      @byte_size = 0
+      @offset = 0_i64
       @size = values.size
       first_value = values[0]
       @min_time = first_value.created_at
@@ -133,19 +129,19 @@ module Appmonit::DB
     getter max_value : Int64
     getter sum_value : Int64
 
-    def self.from_io(io, offset, byte_size, size, min_time, max_time)
+    def self.from_io(io, offset, size, min_time, max_time)
       min_value = io.read_bytes(Int64)
       max_value = io.read_bytes(Int64)
       sum_value = io.read_bytes(Int64)
-      self.new(offset, byte_size, size, min_time, max_time, min_value, max_value, sum_value)
+      self.new(offset, size, min_time, max_time, min_value, max_value, sum_value)
     end
 
-    def initialize(@offset, @byte_size, @size, @min_time, @max_time, @min_value, @max_value, @sum_value)
+    def initialize(offset, @size, @min_time, @max_time, @min_value, @max_value, @sum_value)
+      @offset = offset.to_i64
     end
 
     def initialize(values : DB::Int64Values)
-      @offset = 0
-      @byte_size = 0
+      @offset = 0_i64
       @size = values.size
       @sum_value = 0_i64
 
@@ -186,19 +182,19 @@ module Appmonit::DB
     getter max_value : Float64
     getter sum_value : Float64
 
-    def self.from_io(io, offset, byte_size, size, min_time, max_time)
+    def self.from_io(io, offset, size, min_time, max_time)
       min_value = io.read_bytes(Float64)
       max_value = io.read_bytes(Float64)
       sum_value = io.read_bytes(Float64)
-      self.new(offset, byte_size, size, min_time, max_time, min_value, max_value, sum_value)
+      self.new(offset, size, min_time, max_time, min_value, max_value, sum_value)
     end
 
-    def initialize(@offset, @byte_size, @size, @min_time, @max_time, @min_value, @max_value, @sum_value)
+    def initialize(offset, @size, @min_time, @max_time, @min_value, @max_value, @sum_value)
+      @offset = offset.to_i64
     end
 
     def initialize(values : DB::Float64Values)
-      @offset = 0
-      @byte_size = 0
+      @offset = 0_i64
       @size = values.size
       @sum_value = 0.0_f64
 
@@ -238,18 +234,18 @@ module Appmonit::DB
     getter min_value : String
     getter max_value : String
 
-    def self.from_io(io, offset, byte_size, size, min_time, max_time)
+    def self.from_io(io, offset, size, min_time, max_time)
       min_value = io.gets(io.read_bytes(Int32)).to_s
       max_value = io.gets(io.read_bytes(Int32)).to_s
-      self.new(offset, byte_size, size, min_time, max_time, min_value, max_value)
+      self.new(offset, size, min_time, max_time, min_value, max_value)
     end
 
-    def initialize(@offset, @byte_size, @size, @min_time, @max_time, @min_value, @max_value)
+    def initialize(offset, @size, @min_time, @max_time, @min_value, @max_value)
+      @offset = offset.to_i64
     end
 
     def initialize(values : DB::StringValues)
-      @offset = 0
-      @byte_size = 0
+      @offset = 0_i64
       @size = values.size
 
       first_value = values[0]

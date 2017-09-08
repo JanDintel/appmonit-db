@@ -1,17 +1,17 @@
 module Appmonit::DB
   struct ColumnIndex
-    getter column_name : String
+    getter column_id : Int64
     getter block_stats : Array(BlockStat)
 
     def self.from_io(io)
-      column_index = ColumnIndex.new(io.gets(io.read_bytes(Int32)).to_s)
+      column_index = ColumnIndex.new(io.read_bytes(Int64))
       io.read_bytes(Int32).times do
         column_index.block_stats << BlockStat.from_io(io)
       end
       column_index
     end
 
-    def initialize(@column_name)
+    def initialize(@column_id)
       @block_stats = Array(BlockStat).new
     end
 
@@ -33,8 +33,7 @@ module Appmonit::DB
     end
 
     def to_io(io)
-      io.write_bytes(column_name.size)
-      io.write(column_name.to_slice)
+      io.write_bytes(column_id)
       io.write_bytes(block_stats.size)
       block_stats.each(&.to_io(io))
     end

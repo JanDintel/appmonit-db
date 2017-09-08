@@ -1,15 +1,13 @@
 module Appmonit::DB
   describe BlockStat do
     context "update" do
-      it "return the blockstat with updated offset and byte size" do
+      it "return the blockstat with updated offset" do
         values = Int64Values{Value[Time.epoch(1), 100, 0]}
         stat = BlockStat::Int64Values.new(values)
         stat.offset.should eq 0
-        stat.byte_size.should eq 0
 
-        stat.update(byte_size: 10, offset: 20)
+        stat.update(offset: 20)
         stat.offset.should eq 20
-        stat.byte_size.should eq 10
       end
     end
 
