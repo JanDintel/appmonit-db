@@ -45,40 +45,44 @@ module Appmonit::DB
       buffer.to_slice
     end
 
-    def self.decode(encoded : Bytes, type : EncodingType)
+    def self.decode(encoded : Bytes, type : EncodingType, size = 2000) : ValuesType
       buffer = IO::Memory.new(encoded)
       timestamps = Int64Decoder.decode(buffer)
       uuids = Int32Decoder.decode(buffer)
 
+      result = Values.create(type, size)
+
       case type
       when EncodingType::Int64
         values = Int64Decoder.decode(buffer)
-        values.map do |value|
-          Int64Value.new(Time.epoch(timestamps.shift), uuids.shift, value)
+        values.each do |value|
+          result << Int64Value.new(Time.epoch(timestamps.shift), uuids.shift, value)
         end
       when EncodingType::Float64
         values = Float64Decoder.decode(buffer)
-        values.map do |value|
-          Float64Value.new(Time.epoch(timestamps.shift), uuids.shift, value)
+        values.each do |value|
+          result << Float64Value.new(Time.epoch(timestamps.shift), uuids.shift, value)
         end
       when EncodingType::Bool
         values = BoolDecoder.decode(buffer)
-        values.map do |value|
-          BoolValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
+        values.each do |value|
+          result << BoolValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
         end
       when EncodingType::String
         values = StringDecoder.decode(buffer)
-        values.map do |value|
-          StringValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
+        values.each do |value|
+          result << StringValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
         end
       when EncodingType::Array
         values = ArrayDecoder.decode(buffer)
-        values.map do |value|
-          ArrayValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
+        values.each do |value|
+          result << ArrayValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
         end
       else
         raise "invalid encoding type"
       end
+
+      result
     end
 
     abstract class Encoder(T)

@@ -19,6 +19,23 @@ module Appmonit::DB
       end
     end
 
+    it "crops the values" do
+      values = Int64Values{
+        Value[Time.epoch(0), 100, 1],
+        Value[Time.epoch(1), 100, 1],
+        Value[Time.epoch(2), 100, 1],
+        Value[Time.epoch(3), 100, 1],
+        Value[Time.epoch(4), 100, 1],
+      }
+
+      values.crop!(Time.epoch(1), Time.epoch(3))
+      values.should eq Int64Values{
+        Value[Time.epoch(1), 100, 1],
+        Value[Time.epoch(2), 100, 1],
+        Value[Time.epoch(3), 100, 1],
+      }
+    end
+
     context "{}" do
       it "accepts values from different types" do
         values = Values{
