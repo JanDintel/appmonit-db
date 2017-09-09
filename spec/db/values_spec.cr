@@ -32,7 +32,6 @@ module Appmonit::DB
       values.should eq Int64Values{
         Value[Time.epoch(1), 100, 1],
         Value[Time.epoch(2), 100, 1],
-        Value[Time.epoch(3), 100, 1],
       }
     end
 

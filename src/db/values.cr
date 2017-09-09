@@ -48,7 +48,7 @@ module Appmonit::DB
       end
 
       def crop!(min_time, max_time)
-        self.select! { |value| value.created_at >= min_time && value.created_at <= max_time }
+        self.select! { |value| value.created_at >= min_time && value.created_at < max_time }
       end
 
       def encoding_type
