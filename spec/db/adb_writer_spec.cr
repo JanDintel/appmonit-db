@@ -125,14 +125,15 @@ module Appmonit::DB
         name.should_not eq FILE_HEADER
       end
 
-      it "sets the position to the end" do
+      it "sets the position to the end of the file" do
         ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") { }
+        File.open("/tmp/appmonit-db/1/0-60.adb", "a+") { |file| file << "bogus" }
         ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") do |writer|
-          writer.bytes_written.should eq 14
+          writer.bytes_written.should eq 14 + "bogus".size
         end
       end
 
-      it "appends a new block" do
+      it "appends a new block at the last known location" do
         values = Int64Values{
           Value[Time.epoch(0), 100, 1],
           Value[Time.epoch(1), 101, 1],
@@ -146,11 +147,26 @@ module Appmonit::DB
 
         CollectionIndex.from_file("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 1
 
+        File.open("/tmp/appmonit-db/1/0-60.adb", "a+") { |file| file << "bogus" }
+
         ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") do |writer|
           writer.write_block(1_i64, BlockStat.new(values), encoded)
         end
 
         CollectionIndex.from_file("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 2
+
+        ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
+          values = reader.read_values(1_i64, Time.epoch(0), Time.epoch(3))
+          values.should be_a(Values)
+          values.should eq Int64Values{
+            Value[Time.epoch(0), 100, 1],
+            Value[Time.epoch(1), 101, 1],
+            Value[Time.epoch(2), 102, 1],
+            Value[Time.epoch(0), 100, 1],
+            Value[Time.epoch(1), 101, 1],
+            Value[Time.epoch(2), 102, 1],
+          }
+        end
       end
     end
   end

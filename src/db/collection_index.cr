@@ -1,6 +1,7 @@
 module Appmonit::DB
   struct CollectionIndex
     getter collection_id : Int64
+    property byte_size : Int64
     getter column_ids : Hash(Int64, ColumnIndex)
 
     delegate :[], to: column_ids
@@ -12,7 +13,7 @@ module Appmonit::DB
       end
     end
 
-    def to_file(location)
+    def to_file(location, @byte_size)
       tmp_location = location.gsub(".idx", ".tidx")
       File.open(tmp_location, "w") do |file|
         Util.write_header(file)
@@ -24,7 +25,8 @@ module Appmonit::DB
     end
 
     def self.from_io(io)
-      collection_index = CollectionIndex.new(io.read_bytes(Int64))
+      # Read 2 Int64 to initialize the collection index
+      collection_index = CollectionIndex.new(io.read_bytes(Int64), io.read_bytes(Int64))
       io.read_bytes(Int32).times do
         column_index = ColumnIndex.from_io(io)
         collection_index.column_ids[column_index.column_id] = column_index
@@ -32,12 +34,13 @@ module Appmonit::DB
       collection_index
     end
 
-    def initialize(@collection_id)
+    def initialize(@collection_id, @byte_size = 0_i64)
       @column_ids = Hash(Int64, ColumnIndex).new { |h, k| h[k] = ColumnIndex.new(k) }
     end
 
     def to_io(io)
       io.write_bytes(collection_id)
+      io.write_bytes(byte_size)
       io.write_bytes(column_ids.size)
       column_ids.values.each(&.to_io(io))
     end

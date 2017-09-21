@@ -29,15 +29,15 @@ module Appmonit::DB
 
       @file = File.open(@adb_file.location, "a+")
       @locked = false
-      @bytes_written = 0_i64
 
       if @append
-        @file.seek(0, IO::Seek::End)
-        @bytes_written += @file.pos
         @collection_index = CollectionIndex.from_file(@adb_file.index_location)
+        @file.seek(0, IO::Seek::End)
+        @bytes_written = @file.pos
       else
         @collection_index = CollectionIndex.new(@adb_file.collection_id)
-        @bytes_written += Util.write_header(@file)
+        Util.write_header(@file)
+        @bytes_written = @file.pos
       end
     end
 
@@ -62,22 +62,21 @@ module Appmonit::DB
 
       checksum = CRC32.checksum(block)
 
+      offset = file.pos
       file.write_bytes(checksum)
       file.write_bytes(block.size)
       file.write(block)
       file.flush
 
-      size = block.size + sizeof(UInt32) + sizeof(Int32)
-      offset = @bytes_written
-      @bytes_written += size
-
+      @bytes_written = file.pos
+      @collection_index.byte_size = @bytes_written
       block_stat.update(offset: offset)
 
       @collection_index.column_ids[column_id].block_stats << block_stat
     end
 
     def write_index
-      @collection_index.to_file(@adb_file.index_location)
+      @collection_index.to_file(@adb_file.index_location, @bytes_written)
     end
 
     def column_ids
