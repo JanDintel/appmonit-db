@@ -3,8 +3,7 @@ require "../spec_helper"
 module Appmonit::DB
   describe ADBWriter do
     it "writes the header when opened" do
-      ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") do |writer|
-      end
+      ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") { }
       file = File.open("/tmp/appmonit-db/1/0-60.adb")
       file.read(name = Bytes.new(FILE_HEADER.size))
       version = file.read_bytes(Int32)
@@ -145,7 +144,7 @@ module Appmonit::DB
           writer.write_block(1_i64, BlockStat.new(values), encoded)
         end
 
-        CollectionIndex.from_file("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 1
+        CollectionIndex.from_file!("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 1
 
         File.open("/tmp/appmonit-db/1/0-60.adb", "a+") { |file| file << "bogus" }
 
@@ -153,7 +152,7 @@ module Appmonit::DB
           writer.write_block(1_i64, BlockStat.new(values), encoded)
         end
 
-        CollectionIndex.from_file("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 2
+        CollectionIndex.from_file!("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 2
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
           values = reader.read_values(1_i64, Time.epoch(0), Time.epoch(3))
@@ -168,6 +167,25 @@ module Appmonit::DB
           }
         end
       end
+    end
+
+    it "creates a new shard if the index is missing" do
+      values = Int64Values{
+        Value[Time.epoch(0), 100, 1],
+        Value[Time.epoch(1), 101, 1],
+        Value[Time.epoch(2), 102, 1],
+      }
+      encoded = Encoding.encode(values)
+
+      ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") do |writer|
+        writer.write_block(1_i64, BlockStat.new(values), encoded)
+      end
+
+      FileUtils.rm("/tmp/appmonit-db/1/0-60.idx")
+
+      (File::Stat.new("/tmp/appmonit-db/1/0-60.adb").size > 14).should be_true
+      ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") { }
+      File::Stat.new("/tmp/appmonit-db/1/0-60.adb").size.should eq 14
     end
   end
 end

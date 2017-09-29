@@ -22,20 +22,31 @@ module Appmonit::DB
     end
 
     def initialize(@adb_file : ADBFile)
-      @append = File.exists?(@adb_file.location)
-
       Dir.mkdir_p(File.dirname(@adb_file.location))
       Dir.mkdir_p(File.dirname(@adb_file.index_location))
 
-      @file = File.open(@adb_file.location, "a+")
+      collection_index = CollectionIndex.from_file(@adb_file.index_location)
+      if collection_index
+        if File.exists?(@adb_file.location)
+          @append = true
+        else
+          collection_index = CollectionIndex.new(@adb_file.collection_id)
+          @append = false
+        end
+      else
+        collection_index = CollectionIndex.new(@adb_file.collection_id)
+        @append = false
+      end
+      @collection_index = collection_index
+
       @locked = false
 
       if @append
-        @collection_index = CollectionIndex.from_file(@adb_file.index_location)
+        @file = File.open(@adb_file.location, "a+")
         @file.seek(0, IO::Seek::End)
         @bytes_written = @file.pos
       else
-        @collection_index = CollectionIndex.new(@adb_file.collection_id)
+        @file = File.open(@adb_file.location, "w+")
         Util.write_header(@file)
         @bytes_written = @file.pos
       end

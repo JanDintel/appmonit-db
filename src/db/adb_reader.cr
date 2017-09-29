@@ -23,7 +23,7 @@ module Appmonit::DB
 
       @file = File.open(@adb_file.location, "r")
       Util.read_header(@file)
-      @collection_index = CollectionIndex.from_file(@adb_file.index_location)
+      @collection_index = CollectionIndex.from_file!(@adb_file.index_location)
     end
 
     def column_ids : Array(Int64)

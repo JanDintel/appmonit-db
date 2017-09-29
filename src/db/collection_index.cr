@@ -6,10 +6,21 @@ module Appmonit::DB
 
     delegate :[], to: column_ids
 
+    def self.from_file!(location)
+      self.from_file(location).not_nil!
+    end
+
     def self.from_file(location)
-      File.open(location, "r") do |io|
-        Util.read_header(io)
-        self.from_io(io)
+      tmp_location = location.gsub(".idx", ".tidx")
+      if !File.exists?(location) && File.exists?(tmp_location)
+        FileUtils.mv(tmp_location, location)
+      end
+
+      if File.exists?(location)
+        File.open(location, "r") do |io|
+          Util.read_header(io)
+          self.from_io(io)
+        end
       end
     end
 

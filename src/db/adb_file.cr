@@ -28,5 +28,9 @@ module Appmonit::DB
     def index_location
       location.gsub(".adb", ".idx")
     end
+
+    def tmp_index_location
+      location.gsub(".adb", ".tidx")
+    end
   end
 end
