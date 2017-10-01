@@ -231,16 +231,11 @@ module Appmonit::DB
   struct BlockStat::StringValues
     include BlockStat
 
-    getter min_value : String
-    getter max_value : String
-
     def self.from_io(io, offset, size, min_time, max_time)
-      min_value = io.gets(io.read_bytes(Int32)).to_s
-      max_value = io.gets(io.read_bytes(Int32)).to_s
-      self.new(offset, size, min_time, max_time, min_value, max_value)
+      self.new(offset, size, min_time, max_time)
     end
 
-    def initialize(offset, @size, @min_time, @max_time, @min_value, @max_value)
+    def initialize(offset, @size, @min_time, @max_time)
       @offset = offset.to_i64
     end
 
@@ -252,25 +247,13 @@ module Appmonit::DB
 
       @min_time = first_value.created_at
       @max_time = first_value.created_at
-      @min_value = first_value.value
-      @max_value = first_value.value
 
       # iterate over the values only once
       1.upto(values.size - 1) do |index|
         value = values[index]
         @min_time = {@min_time, value.created_at}.min
         @max_time = {@max_time, value.created_at}.max
-        @min_value = {@min_value, value.value}.min
-        @max_value = {@max_value, value.value}.max
       end
-    end
-
-    def to_io(io)
-      super(io)
-      io.write_bytes(min_value.size)
-      io.write(min_value.to_slice)
-      io.write_bytes(max_value.size)
-      io.write(max_value.to_slice)
     end
 
     def encoding_type

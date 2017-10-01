@@ -106,18 +106,6 @@ module Appmonit::DB
         stat.size.should eq 4
         values.size.should eq 4
       end
-
-      it "sets the min, max and sum" do
-        values = StringValues{
-          Value[Time.epoch(1), 100, "a"],
-          Value[Time.epoch(0), 101, "b"],
-          Value[Time.epoch(3), 102, "aa"],
-          Value[Time.epoch(2), 103, "1"],
-        }
-        stat = BlockStat::StringValues.new(values)
-        stat.min_value.should eq "1"
-        stat.max_value.should eq "b"
-      end
     end
 
     context "from bool values" do
