@@ -86,7 +86,7 @@ module Appmonit::DB
         load_values
 
         if @next_values.any?
-          index, value = @next_values.min_by { |index, value| {value.created_at, value.uuid} }
+          index, value = @next_values.min_by { |index, value| value.row_id }
           @next_values.delete(index)
         else
           stop

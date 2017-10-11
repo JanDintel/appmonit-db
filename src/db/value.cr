@@ -44,7 +44,11 @@ module Appmonit::DB
     end
 
     def <=>(other)
-      {created_at, uuid} <=> {other.created_at, other.uuid}
+      row_id <=> other.row_id
+    end
+
+    def row_id
+      {created_at, uuid}
     end
   end
 
