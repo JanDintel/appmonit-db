@@ -42,6 +42,10 @@ module Appmonit::DB
     def self.[](created_at : Time, uuid : Int32, value)
       StringValue.new(created_at, uuid, value.to_s)
     end
+
+    def <=>(other)
+      {created_at, uuid} <=> {other.created_at, other.uuid}
+    end
   end
 
   record StringValue, created_at : Time, uuid : Int32, value : String do

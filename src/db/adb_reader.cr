@@ -66,5 +66,62 @@ module Appmonit::DB
     def close
       @file.close
     end
+
+    def iterate(column_id, min_time, max_time)
+      ColumnIterator.new(self, @collection_index.map_block_stats(column_id, min_time, max_time), min_time, max_time)
+    end
+
+    class ColumnIterator
+      include Iterator(Value)
+
+      @iterators : Array(Iterator(Value))
+      @next_values : Hash(Int32, Value)
+
+      def initialize(@adb_reader : ADBReader, @block_stats : Array(BlockStat), @min_time : Time, @max_time : Time)
+        @iterators = [] of Iterator(Value)
+        @next_values = {} of Int32 => Value
+      end
+
+      def next
+        load_values
+
+        if @next_values.any?
+          index, value = @next_values.min_by { |index, value| {value.created_at, value.uuid} }
+          @next_values.delete(index)
+        else
+          stop
+        end
+      end
+
+      private def load_values
+        if @iterators.empty?
+          load_iterators
+        end
+
+        @iterators.each_with_index do |iterator, index|
+          unless @next_values[index]?
+            iterator.each do |value|
+              if value.created_at >= @min_time && value.created_at <= @max_time
+                @next_values[index] = value
+                break
+              end
+            end
+          end
+        end
+      end
+
+      private def load_iterators
+        return if @block_stats.empty?
+
+        current_block = @block_stats.shift
+        buffer = @adb_reader.read_block(current_block.offset)
+        @iterators << Encoding.iterate(buffer, current_block.encoding_type)
+        while @block_stats.any? && current_block.overlap?(@block_stats.first)
+          current_block = @block_stats.shift
+
+          @iterators << Encoding.iterate(@adb_reader.read_block(current_block.offset), current_block.encoding_type)
+        end
+      end
+    end
   end
 end

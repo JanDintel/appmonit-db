@@ -152,7 +152,7 @@ module Appmonit::DB
           writer.write_block(1_i64, BlockStat.new(values), encoded)
         end
 
-        CollectionIndex.from_file!("/tmp/appmonit-db/1/0-60.idx").column_ids[1_i64].block_stats.size.should eq 2
+        CollectionIndex.from_file!("/tmp/appmonit-db/1/0-60.idx").map_block_stats(1_i64, Time.epoch(0), Time.epoch(2)).size.should eq 2
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
           values = reader.read_values(1_i64, Time.epoch(0), Time.epoch(3))

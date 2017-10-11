@@ -1,7 +1,6 @@
 module Appmonit::DB
   struct ColumnIndex
     getter column_id : Int64
-    getter block_stats : Array(BlockStat)
 
     def self.from_io(io)
       column_index = ColumnIndex.new(io.read_bytes(Int64))

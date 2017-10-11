@@ -133,6 +133,44 @@ module Appmonit::DB
           }
         end
       end
+
+      it "iterates the values for a time range in order" do
+        int64values = Int64Values{
+          Value[Time.epoch(0), 100, 1],
+          Value[Time.epoch(1), 101, 1],
+          Value[Time.epoch(2), 102, 1],
+          Value[Time.epoch(4), 103, 1],
+        }
+        int64encoded = Encoding.encode(int64values)
+
+        float64values = Float64Values{
+          Value[Time.epoch(2), 100, 1.1],
+          Value[Time.epoch(3), 100, 1.1],
+        }
+        float64encoded = Encoding.encode(float64values)
+
+        ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") do |writer|
+          writer.write_block(1_i64, BlockStat.new(int64values), int64encoded)
+          writer.write_block(1_i64, BlockStat.new(float64values), float64encoded)
+          writer.write_block(1_i64, BlockStat.new(int64values), int64encoded)
+        end
+
+        ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
+          iterator = reader.iterate(1_i64, Time.epoch(1), Time.epoch(3))
+          values = Array(Value).new
+          iterator.each do |value|
+            values << value if value
+          end
+          values.should eq [
+            Value[Time.epoch(1), 101, 1],
+            Value[Time.epoch(1), 101, 1],
+            Value[Time.epoch(2), 100, 1.1],
+            Value[Time.epoch(2), 102, 1],
+            Value[Time.epoch(2), 102, 1],
+            Value[Time.epoch(3), 100, 1.1],
+          ]
+        end
+      end
     end
   end
 end

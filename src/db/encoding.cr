@@ -5,6 +5,7 @@ require "encoding/delta_encoding_64"
 require "encoding/bit_stream"
 require "snappy"
 require "msgpack"
+require "./value"
 
 module Appmonit::DB
   module Encoding
@@ -83,6 +84,153 @@ module Appmonit::DB
       end
 
       result
+    end
+
+    def self.iterate(encoded : Bytes, type : EncodingType) : Iterator
+      case type
+      when EncodingType::Int64
+        Int64ValuesIterator.new(encoded)
+      when EncodingType::Float64
+        Float64ValuesIterator.new(encoded)
+      when EncodingType::Bool
+        BoolValuesIterator.new(encoded)
+      when EncodingType::String
+        StringValuesIterator.new(encoded)
+      when EncodingType::Array
+        ArrayValuesIterator.new(encoded)
+      else
+        raise "invalid encoding type"
+      end
+    end
+
+    class Int64ValuesIterator
+      include ::Iterator(Int64Value)
+
+      @timestamps : Array(Int64)
+      @uuids : Array(Int32)
+
+      def initialize(encoded)
+        buffer = IO::Memory.new(encoded)
+        @timestamps = Int64Decoder.decode(buffer)
+        @uuids = Int32Decoder.decode(buffer)
+        @values = Int64Iterator.new(buffer)
+      end
+
+      def next
+        return stop if @timestamps.empty?
+        timestamp = @timestamps.shift
+        uuid = @uuids.shift
+        value = @values.next
+        if value.is_a?(Int64)
+          Int64Value.new(Time.epoch(timestamp), uuid, value)
+        else
+          stop
+        end
+      end
+    end
+
+    class Float64ValuesIterator
+      include ::Iterator(Float64Value)
+
+      @timestamps : Array(Int64)
+      @uuids : Array(Int32)
+
+      def initialize(encoded)
+        buffer = IO::Memory.new(encoded)
+        @timestamps = Int64Decoder.decode(buffer)
+        @uuids = Int32Decoder.decode(buffer)
+        @values = Float64Iterator.new(buffer)
+      end
+
+      def next
+        return stop if @timestamps.empty?
+        timestamp = @timestamps.shift
+        uuid = @uuids.shift
+        value = @values.next
+        if value.is_a?(Float64)
+          Float64Value.new(Time.epoch(timestamp), uuid, value)
+        else
+          stop
+        end
+      end
+    end
+
+    class BoolValuesIterator
+      include ::Iterator(BoolValue)
+
+      @timestamps : Array(Int64)
+      @uuids : Array(Int32)
+
+      def initialize(encoded)
+        buffer = IO::Memory.new(encoded)
+        @timestamps = Int64Decoder.decode(buffer)
+        @uuids = Int32Decoder.decode(buffer)
+        @values = BoolIterator.new(buffer)
+      end
+
+      def next
+        return stop if @timestamps.empty?
+        timestamp = @timestamps.shift
+        uuid = @uuids.shift
+        value = @values.next
+        if value.is_a?(Bool)
+          BoolValue.new(Time.epoch(timestamp), uuid, value)
+        else
+          stop
+        end
+      end
+    end
+
+    class StringValuesIterator
+      include ::Iterator(StringValue)
+
+      @timestamps : Array(Int64)
+      @uuids : Array(Int32)
+
+      def initialize(encoded)
+        buffer = IO::Memory.new(encoded)
+        @timestamps = Int64Decoder.decode(buffer)
+        @uuids = Int32Decoder.decode(buffer)
+        @values = StringIterator.new(buffer)
+      end
+
+      def next
+        return stop if @timestamps.empty?
+        timestamp = @timestamps.shift
+        uuid = @uuids.shift
+        value = @values.next
+        if value.is_a?(String)
+          StringValue.new(Time.epoch(timestamp), uuid, value)
+        else
+          stop
+        end
+      end
+    end
+
+    class ArrayValuesIterator
+      include ::Iterator(ArrayValue)
+
+      @timestamps : Array(Int64)
+      @uuids : Array(Int32)
+
+      def initialize(encoded)
+        buffer = IO::Memory.new(encoded)
+        @timestamps = Int64Decoder.decode(buffer)
+        @uuids = Int32Decoder.decode(buffer)
+        @values = ArrayIterator.new(buffer)
+      end
+
+      def next
+        return stop if @timestamps.empty?
+        timestamp = @timestamps.shift
+        uuid = @uuids.shift
+        value = @values.next
+        if value.is_a?(Array(String))
+          ArrayValue.new(Time.epoch(timestamp), uuid, value)
+        else
+          stop
+        end
+      end
     end
 
     abstract class Encoder(T)
@@ -224,10 +372,42 @@ module Appmonit::DB
       end
     end
 
+    class Int32Iterator
+      include Iterator(Int32)
+
+      def initialize(buffer)
+        @decoder = DeltaEncoding::Decoder.new(buffer)
+      end
+
+      def next
+        if @decoder.all_read?
+          stop
+        else
+          @decoder.read_integer
+        end
+      end
+    end
+
     class Int64Decoder < Decoder(Int64)
       def self.decode(buffer)
         decoder = DeltaEncoding64::Decoder.new(buffer)
         decoder.values
+      end
+    end
+
+    class Int64Iterator
+      include Iterator(Int64)
+
+      def initialize(buffer)
+        @decoder = DeltaEncoding64::Decoder.new(buffer)
+      end
+
+      def next
+        if @decoder.all_read?
+          stop
+        else
+          @decoder.read_integer
+        end
       end
     end
 
@@ -239,6 +419,22 @@ module Appmonit::DB
           values << decoder.value
         end
         values
+      end
+    end
+
+    class Float64Iterator
+      include Iterator(Float64)
+
+      def initialize(buffer)
+        @decoder = FloatEncoding::Decoder.new(buffer)
+      end
+
+      def next
+        if @decoder.next
+          @decoder.value
+        else
+          stop
+        end
       end
     end
 
@@ -254,6 +450,26 @@ module Appmonit::DB
       end
     end
 
+    class BoolIterator
+      include Iterator(Bool)
+
+      @count : Int32
+
+      def initialize(buffer)
+        @count = buffer.read_bytes(Int32, IO::ByteFormat::LittleEndian)
+        @bool_decoder = BitStream.new(buffer, :read)
+      end
+
+      def next
+        if @count > 0
+          @count -= 1
+          @bool_decoder.read_bit
+        else
+          stop
+        end
+      end
+    end
+
     class StringDecoder < Decoder(String)
       def self.decode(buffer)
         encoded = Slice(UInt8).new(buffer.read_bytes(Int32, IO::ByteFormat::LittleEndian))
@@ -264,6 +480,29 @@ module Appmonit::DB
       end
     end
 
+    class StringIterator
+      include Iterator(String)
+
+      @count : Int32
+
+      def initialize(buffer)
+        encoded = ::Slice(UInt8).new(buffer.read_bytes(Int32, IO::ByteFormat::LittleEndian))
+        buffer.read_fully(encoded)
+        packed = Snappy.inflate(encoded)
+        @unpacker = MessagePack::Unpacker.new(packed)
+        @count = @unpacker.read_array_size
+      end
+
+      def next
+        if @count > 0
+          @count -= 1
+          @unpacker.read_string
+        else
+          stop
+        end
+      end
+    end
+
     class ArrayDecoder < Decoder(Array(String))
       def self.decode(buffer)
         encoded = Slice(UInt8).new(buffer.read_bytes(Int32, IO::ByteFormat::LittleEndian))
@@ -271,6 +510,31 @@ module Appmonit::DB
         packed = Snappy.inflate(encoded)
 
         Array(Array(String)).from_msgpack(packed)
+      end
+    end
+
+    class ArrayIterator
+      include Iterator(Array(String))
+
+      @count : Int32
+
+      def initialize(buffer)
+        encoded = ::Slice(UInt8).new(buffer.read_bytes(Int32, IO::ByteFormat::LittleEndian))
+        buffer.read_fully(encoded)
+        packed = Snappy.inflate(encoded)
+        @unpacker = MessagePack::Unpacker.new(packed)
+        @count = @unpacker.read_array_size
+      end
+
+      def next
+        if @count > 0
+          @count -= 1
+          Array(String).new(@unpacker.read_array_size) do
+            @unpacker.read_string
+          end
+        else
+          stop
+        end
       end
     end
   end

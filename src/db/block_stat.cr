@@ -53,6 +53,10 @@ module Appmonit::DB
       {min_time, start_time}.max <= {max_time, end_time}.min
     end
 
+    def overlap?(other : BlockStat)
+      min_time == other.min_time || (max_time >= other.min_time && min_time <= other.max_time)
+    end
+
     def update(offset)
       @offset = offset.to_i64
       self
@@ -143,7 +147,6 @@ module Appmonit::DB
     def initialize(values : DB::Int64Values)
       @offset = 0_i64
       @size = values.size
-      @sum_value = 0_i64
 
       first_value = values[0]
 
@@ -151,6 +154,7 @@ module Appmonit::DB
       @max_time = first_value.created_at
       @min_value = first_value.value
       @max_value = first_value.value
+      @sum_value = first_value.value
 
       # iterate over the values only once
       1.upto(values.size - 1) do |index|
@@ -196,7 +200,6 @@ module Appmonit::DB
     def initialize(values : DB::Float64Values)
       @offset = 0_i64
       @size = values.size
-      @sum_value = 0.0_f64
 
       first_value = values[0]
 
@@ -204,6 +207,7 @@ module Appmonit::DB
       @max_time = first_value.created_at
       @min_value = first_value.value
       @max_value = first_value.value
+      @sum_value = first_value.value
 
       # iterate over the values only once
       1.upto(values.size - 1) do |index|

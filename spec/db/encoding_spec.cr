@@ -11,6 +11,10 @@ module Appmonit::DB
 
         decoded = Encoding.decode(encoded, EncodingType::Int64)
         decoded.should eq values
+
+        iterator = Encoding.iterate(encoded, EncodingType::Int64)
+        iterator.next.should eq Value[Time.epoch(0), 100, 1]
+        iterator.next.should eq Value[Time.epoch(1), 100, 1]
       end
     end
 
@@ -23,6 +27,10 @@ module Appmonit::DB
 
         decoded = Encoding.decode(encoded, EncodingType::Float64)
         decoded.should eq values
+
+        iterator = Encoding.iterate(encoded, EncodingType::Float64)
+        iterator.next.should eq Value[Time.epoch(0), 100, 1.1]
+        iterator.next.should eq Value[Time.epoch(1), 100, 2.1]
       end
     end
 
@@ -35,6 +43,10 @@ module Appmonit::DB
 
         decoded = Encoding.decode(encoded, EncodingType::String)
         decoded.should eq values
+
+        iterator = Encoding.iterate(encoded, EncodingType::String)
+        iterator.next.should eq Value[Time.epoch(0), 100, "a"]
+        iterator.next.should eq Value[Time.epoch(1), 100, "b"]
       end
     end
 
@@ -47,6 +59,10 @@ module Appmonit::DB
 
         decoded = Encoding.decode(encoded, EncodingType::Array)
         decoded.should eq values
+
+        iterator = Encoding.iterate(encoded, EncodingType::Array)
+        iterator.next.should eq Value[Time.epoch(0), 100, ["a"]]
+        iterator.next.should eq Value[Time.epoch(1), 100, ["b"]]
       end
     end
 
@@ -59,6 +75,10 @@ module Appmonit::DB
 
         decoded = Encoding.decode(encoded, EncodingType::Bool)
         decoded.should eq values
+
+        iterator = Encoding.iterate(encoded, EncodingType::Bool)
+        iterator.next.should eq Value[Time.epoch(0), 100, true]
+        iterator.next.should eq Value[Time.epoch(1), 100, false]
       end
     end
   end
