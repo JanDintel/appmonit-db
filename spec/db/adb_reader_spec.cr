@@ -170,6 +170,59 @@ module Appmonit::DB
             Value[Time.epoch(3), 100, 1.1],
           ]
         end
+
+        it "iterates the rows for a time ranges" do
+          int64values = DB::Int64Values{
+            DB::Value[Time.epoch(0), 100, 1],
+            DB::Value[Time.epoch(1), 101, 1],
+            DB::Value[Time.epoch(2), 102, 1],
+          }
+          int64encoded = DB::Encoding.encode(int64values)
+
+          float64values = DB::Float64Values{
+            DB::Value[Time.epoch(0), 100, 1.0],
+            DB::Value[Time.epoch(1), 102, 1.1],
+            DB::Value[Time.epoch(2), 103, 1.2],
+          }
+          float64encoded = DB::Encoding.encode(float64values)
+
+          string_values = DB::StringValues{
+            DB::Value[Time.epoch(0), 100, "a"],
+            DB::Value[Time.epoch(1), 101, "b"],
+            DB::Value[Time.epoch(2), 102, "c"],
+          }
+          string_encoded = DB::Encoding.encode(string_values)
+
+          DB::ADBWriter.open("/tmp/appmonit-db/1/0-60.adb") do |writer|
+            writer.write_block(1_i64, DB::BlockStat.new(int64values), int64encoded)
+            writer.write_block(2_i64, DB::BlockStat.new(float64values), float64encoded)
+            writer.write_block(3_i64, DB::BlockStat.new(string_values), string_encoded)
+          end
+
+          ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
+            iterator = reader.iterate([1_i64, 2_i64, 3_i64], Time.epoch(0), Time.epoch(2))
+
+            iterator.next.should eq [DB::Value[Time.epoch(0), 100, 1],
+                                     DB::Value[Time.epoch(0), 100, 1.0],
+                                     DB::Value[Time.epoch(0), 100, "a"]]
+
+            iterator.next.should eq [DB::Value[Time.epoch(1), 101, 1],
+                                     nil,
+                                     DB::Value[Time.epoch(1), 101, "b"]]
+
+            iterator.next.should eq [nil,
+                                     DB::Value[Time.epoch(1), 102, 1.1],
+                                     nil]
+
+            iterator.next.should eq [DB::Value[Time.epoch(2), 102, 1],
+                                     nil,
+                                     DB::Value[Time.epoch(2), 102, "c"]]
+
+            iterator.next.should eq [nil,
+                                     DB::Value[Time.epoch(2), 103, 1.2],
+                                     nil]
+          end
+        end
       end
     end
   end

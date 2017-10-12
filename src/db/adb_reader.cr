@@ -1,3 +1,5 @@
+require "./value"
+
 module Appmonit::DB
   class ADBReader
     getter adb_file : ADBFile
@@ -67,8 +69,69 @@ module Appmonit::DB
       @file.close
     end
 
+    def iterate(column_ids : Array(Int64), min_time, max_time)
+      RowIterator.new(self, column_ids, min_time, max_time)
+    end
+
     def iterate(column_id, min_time, max_time)
       ColumnIterator.new(self, @collection_index.map_block_stats(column_id, min_time, max_time), min_time, max_time)
+    end
+
+    class RowIterator
+      include Iterator(Array(Value?))
+
+      @iterators : Array(ADBReader::ColumnIterator)
+      @next_values : Hash(Int32, Value)
+      @row_id : Tuple(Time, Int32)
+      @num_columns : Int32
+
+      def initialize(@adb_reader : ADBReader, @column_ids : Array(Int64), @min_time : Time, @max_time : Time)
+        @next_values = {} of Int32 => Value
+
+        @row_id = {Time::MinValue, Int32::MIN}
+        @num_columns = @column_ids.size
+        @current_row = Array(Value?).new(@num_columns)
+
+        @iterators = @column_ids.map { |id| @adb_reader.iterate(id, @min_time, @max_time) }
+      end
+
+      def next
+        load_values
+        @current_row.clear
+
+        if @next_values.any?
+          index, value = @next_values.min_by { |index, value| value.row_id }
+
+          if value.row_id > @row_id
+            @row_id = value.row_id
+          end
+
+          @num_columns.times do |index|
+            value = @next_values[index]?
+            if value && value.row_id == @row_id
+              @current_row << value
+              @next_values.delete(index)
+            else
+              @current_row << nil
+            end
+          end
+          @current_row
+        else
+          stop
+        end
+      end
+
+      private def load_values
+        @num_columns.times do |index|
+          iterator = @iterators[index]
+          unless @next_values[index]?
+            value = iterator.next
+            if value.is_a?(Value)
+              @next_values[index] = value
+            end
+          end
+        end
+      end
     end
 
     class ColumnIterator
@@ -87,7 +150,7 @@ module Appmonit::DB
 
         if @next_values.any?
           index, value = @next_values.min_by { |index, value| value.row_id }
-          @next_values.delete(index)
+          @next_values.delete(index).not_nil!
         else
           stop
         end
