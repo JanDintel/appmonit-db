@@ -18,9 +18,9 @@ module Appmonit::DB
 
     it "reads the index" do
       values = Int64Values{
-        Value[Time.epoch(0), 100, 1],
-        Value[Time.epoch(1), 101, 1],
-        Value[Time.epoch(2), 102, 1],
+        Value[0_i64, 100, 1],
+        Value[1_i64, 101, 1],
+        Value[2_i64, 102, 1],
       }
 
       collection_index = nil
@@ -38,9 +38,9 @@ module Appmonit::DB
     context "column_ids" do
       it "returns the columns ids" do
         values = Int64Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(1), 101, 1],
-          Value[Time.epoch(2), 102, 1],
+          Value[0_i64, 100, 1],
+          Value[1_i64, 101, 1],
+          Value[2_i64, 102, 1],
         }
         encoded = Encoding.encode(values)
 
@@ -58,9 +58,9 @@ module Appmonit::DB
     context "read_block" do
       it "reads a block" do
         values = Int64Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(1), 101, 1],
-          Value[Time.epoch(2), 102, 1],
+          Value[0_i64, 100, 1],
+          Value[1_i64, 101, 1],
+          Value[2_i64, 102, 1],
         }
         encoded = Encoding.encode(values)
 
@@ -80,23 +80,23 @@ module Appmonit::DB
     context "read_values" do
       it "reads all value types for a column" do
         int64values = Int64Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(1), 101, 1],
-          Value[Time.epoch(2), 102, 1],
+          Value[0_i64, 100, 1],
+          Value[1_i64, 101, 1],
+          Value[2_i64, 102, 1],
         }
         int64encoded = Encoding.encode(int64values)
 
         float64values = Float64Values{
-          Value[Time.epoch(0), 100, 1.0],
-          Value[Time.epoch(1), 101, 1.1],
-          Value[Time.epoch(2), 102, 1.2],
+          Value[0_i64, 100, 1.0],
+          Value[1_i64, 101, 1.1],
+          Value[2_i64, 102, 1.2],
         }
         float64encoded = Encoding.encode(float64values)
 
         string_values = StringValues{
-          Value[Time.epoch(0), 100, "a"],
-          Value[Time.epoch(1), 101, "b"],
-          Value[Time.epoch(2), 102, "c"],
+          Value[0_i64, 100, "a"],
+          Value[1_i64, 101, "b"],
+          Value[2_i64, 102, "c"],
         }
         string_encoded = Encoding.encode(string_values)
 
@@ -115,9 +115,9 @@ module Appmonit::DB
 
       it "reads the values for a time range" do
         int64values = Int64Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(1), 101, 1],
-          Value[Time.epoch(2), 102, 1],
+          Value[0_i64, 100, 1],
+          Value[1_i64, 101, 1],
+          Value[2_i64, 102, 1],
         }
         int64encoded = Encoding.encode(int64values)
 
@@ -126,26 +126,26 @@ module Appmonit::DB
         end
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
-          values = reader.read_values(1_i64, Time.epoch(2), Time.epoch(3))
+          values = reader.read_values(1_i64, 2_i64, 3_i64)
           values.should be_a(Values)
           values.should eq Int64Values{
-            Value[Time.epoch(2), 102, 1],
+            Value[2_i64, 102, 1],
           }
         end
       end
 
       it "iterates the values for a time range in order" do
         int64values = Int64Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(1), 101, 1],
-          Value[Time.epoch(2), 102, 1],
-          Value[Time.epoch(4), 103, 1],
+          Value[0_i64, 100, 1],
+          Value[1_i64, 101, 1],
+          Value[2_i64, 102, 1],
+          Value[4_i64, 103, 1],
         }
         int64encoded = Encoding.encode(int64values)
 
         float64values = Float64Values{
-          Value[Time.epoch(2), 100, 1.1],
-          Value[Time.epoch(3), 100, 1.1],
+          Value[2_i64, 100, 1.1],
+          Value[3_i64, 100, 1.1],
         }
         float64encoded = Encoding.encode(float64values)
 
@@ -156,40 +156,39 @@ module Appmonit::DB
         end
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
-          iterator = reader.iterate(1_i64, Time.epoch(1), Time.epoch(3))
+          iterator = reader.iterate(1_i64, 1_i64, 3_i64)
           values = Array(Value).new
           iterator.each do |value|
             values << value if value
           end
           values.should eq [
-            Value[Time.epoch(1), 101, 1],
-            Value[Time.epoch(1), 101, 1],
-            Value[Time.epoch(2), 100, 1.1],
-            Value[Time.epoch(2), 102, 1],
-            Value[Time.epoch(2), 102, 1],
-            Value[Time.epoch(3), 100, 1.1],
+            Value[1_i64, 101, 1],
+            Value[1_i64, 101, 1],
+            Value[2_i64, 100, 1.1],
+            Value[2_i64, 102, 1],
+            Value[2_i64, 102, 1],
           ]
         end
 
         it "iterates the rows for a time ranges" do
           int64values = DB::Int64Values{
-            DB::Value[Time.epoch(0), 100, 1],
-            DB::Value[Time.epoch(1), 101, 1],
-            DB::Value[Time.epoch(2), 102, 1],
+            DB::Value[0_i64, 100, 1],
+            DB::Value[1_i64, 101, 1],
+            DB::Value[2_i64, 102, 1],
           }
           int64encoded = DB::Encoding.encode(int64values)
 
           float64values = DB::Float64Values{
-            DB::Value[Time.epoch(0), 100, 1.0],
-            DB::Value[Time.epoch(1), 102, 1.1],
-            DB::Value[Time.epoch(2), 103, 1.2],
+            DB::Value[0_i64, 100, 1.0],
+            DB::Value[1_i64, 102, 1.1],
+            DB::Value[2_i64, 103, 1.2],
           }
           float64encoded = DB::Encoding.encode(float64values)
 
           string_values = DB::StringValues{
-            DB::Value[Time.epoch(0), 100, "a"],
-            DB::Value[Time.epoch(1), 101, "b"],
-            DB::Value[Time.epoch(2), 102, "c"],
+            DB::Value[0_i64, 100, "a"],
+            DB::Value[1_i64, 101, "b"],
+            DB::Value[2_i64, 102, "c"],
           }
           string_encoded = DB::Encoding.encode(string_values)
 
@@ -200,26 +199,18 @@ module Appmonit::DB
           end
 
           ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
-            iterator = reader.iterate([1_i64, 2_i64, 3_i64], Time.epoch(0), Time.epoch(2))
+            iterator = reader.iterate([1_i64, 2_i64, 3_i64], 0_i64, 2_i64)
 
-            iterator.next.should eq [DB::Value[Time.epoch(0), 100, 1],
-                                     DB::Value[Time.epoch(0), 100, 1.0],
-                                     DB::Value[Time.epoch(0), 100, "a"]]
+            iterator.next.should eq [DB::Value[0_i64, 100, 1],
+                                     DB::Value[0_i64, 100, 1.0],
+                                     DB::Value[0_i64, 100, "a"]]
 
-            iterator.next.should eq [DB::Value[Time.epoch(1), 101, 1],
+            iterator.next.should eq [DB::Value[1_i64, 101, 1],
                                      nil,
-                                     DB::Value[Time.epoch(1), 101, "b"]]
+                                     DB::Value[1_i64, 101, "b"]]
 
             iterator.next.should eq [nil,
-                                     DB::Value[Time.epoch(1), 102, 1.1],
-                                     nil]
-
-            iterator.next.should eq [DB::Value[Time.epoch(2), 102, 1],
-                                     nil,
-                                     DB::Value[Time.epoch(2), 102, "c"]]
-
-            iterator.next.should eq [nil,
-                                     DB::Value[Time.epoch(2), 103, 1.2],
+                                     DB::Value[1_i64, 102, 1.1],
                                      nil]
           end
         end

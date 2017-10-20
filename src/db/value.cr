@@ -1,6 +1,6 @@
 module Appmonit::DB
   module Value
-    abstract def created_at
+    abstract def epoch
     abstract def uuid
     abstract def value
     abstract def encoding_type
@@ -23,24 +23,24 @@ module Appmonit::DB
       end
     end
 
-    def self.[](created_at : Time, uuid : Int32, value : Int32 | Int64)
-      Int64Value.new(created_at, uuid, value.to_i64)
+    def self.[](epoch : Int64, uuid : Int32, value : Int32 | Int64)
+      Int64Value.new(epoch, uuid, value.to_i64)
     end
 
-    def self.[](created_at : Time, uuid : Int32, value : Float32 | Float64)
-      Float64Value.new(created_at, uuid, value.to_f64)
+    def self.[](epoch : Int64, uuid : Int32, value : Float32 | Float64)
+      Float64Value.new(epoch, uuid, value.to_f64)
     end
 
-    def self.[](created_at : Time, uuid : Int32, value : Array)
-      ArrayValue.new(created_at, uuid, value.map(&.to_s))
+    def self.[](epoch : Int64, uuid : Int32, value : Array)
+      ArrayValue.new(epoch, uuid, value.map(&.to_s))
     end
 
-    def self.[](created_at : Time, uuid : Int32, value : Bool)
-      BoolValue.new(created_at, uuid, value)
+    def self.[](epoch : Int64, uuid : Int32, value : Bool)
+      BoolValue.new(epoch, uuid, value)
     end
 
-    def self.[](created_at : Time, uuid : Int32, value)
-      StringValue.new(created_at, uuid, value.to_s)
+    def self.[](epoch : Int64, uuid : Int32, value)
+      StringValue.new(epoch, uuid, value.to_s)
     end
 
     def <=>(other)
@@ -48,23 +48,23 @@ module Appmonit::DB
     end
 
     def row_id
-      {created_at, uuid}
+      {epoch, uuid}
     end
   end
 
-  record StringValue, created_at : Time, uuid : Int32, value : String do
+  record StringValue, epoch : Int64, uuid : Int32, value : String do
     include Value
 
     def self.from_io(io)
-      created_at = Time.epoch(io.read_bytes(Int64))
+      epoch = io.read_bytes(Int64)
       uuid = io.read_bytes(Int32)
       value = io.gets(io.read_bytes(Int32)).to_s
-      new(created_at, uuid, value)
+      new(epoch, uuid, value)
     end
 
     def to_io(io)
       io.write_bytes(encoding_type.value)
-      io.write_bytes(created_at.epoch)
+      io.write_bytes(epoch)
       io.write_bytes(uuid)
       io.write_bytes(value.size)
       io.write(value.to_slice)
@@ -74,19 +74,19 @@ module Appmonit::DB
       EncodingType::String
     end
   end
-  record Int64Value, created_at : Time, uuid : Int32, value : Int64 do
+  record Int64Value, epoch : Int64, uuid : Int32, value : Int64 do
     include Value
 
     def self.from_io(io)
-      created_at = Time.epoch(io.read_bytes(Int64))
+      epoch = io.read_bytes(Int64)
       uuid = io.read_bytes(Int32)
       value = io.read_bytes(Int64)
-      new(created_at, uuid, value)
+      new(epoch, uuid, value)
     end
 
     def to_io(io)
       io.write_bytes(encoding_type.value)
-      io.write_bytes(created_at.epoch)
+      io.write_bytes(epoch)
       io.write_bytes(uuid)
       io.write_bytes(value)
     end
@@ -95,19 +95,19 @@ module Appmonit::DB
       EncodingType::Int64
     end
   end
-  record Float64Value, created_at : Time, uuid : Int32, value : Float64 do
+  record Float64Value, epoch : Int64, uuid : Int32, value : Float64 do
     include Value
 
     def self.from_io(io)
-      created_at = Time.epoch(io.read_bytes(Int64))
+      epoch = io.read_bytes(Int64)
       uuid = io.read_bytes(Int32)
       value = io.read_bytes(Float64)
-      new(created_at, uuid, value)
+      new(epoch, uuid, value)
     end
 
     def to_io(io)
       io.write_bytes(encoding_type.value)
-      io.write_bytes(created_at.epoch)
+      io.write_bytes(epoch)
       io.write_bytes(uuid)
       io.write_bytes(value)
     end
@@ -116,19 +116,19 @@ module Appmonit::DB
       EncodingType::Float64
     end
   end
-  record BoolValue, created_at : Time, uuid : Int32, value : Bool do
+  record BoolValue, epoch : Int64, uuid : Int32, value : Bool do
     include Value
 
     def self.from_io(io)
-      created_at = Time.epoch(io.read_bytes(Int64))
+      epoch = io.read_bytes(Int64)
       uuid = io.read_bytes(Int32)
       value = io.read_bytes(UInt8) == 1
-      new(created_at, uuid, value)
+      new(epoch, uuid, value)
     end
 
     def to_io(io)
       io.write_bytes(encoding_type.value)
-      io.write_bytes(created_at.epoch)
+      io.write_bytes(epoch)
       io.write_bytes(uuid)
       io.write_bytes(value ? 1_u8 : 0_u8)
     end
@@ -137,21 +137,21 @@ module Appmonit::DB
       EncodingType::Bool
     end
   end
-  record ArrayValue, created_at : Time, uuid : Int32, value : Array(String) do
+  record ArrayValue, epoch : Int64, uuid : Int32, value : Array(String) do
     include Value
 
     def self.from_io(io)
-      created_at = Time.epoch(io.read_bytes(Int64))
+      epoch = io.read_bytes(Int64)
       uuid = io.read_bytes(Int32)
       value = Array(String).new(io.read_bytes(Int32)) do
         io.gets(io.read_bytes(Int32)).to_s
       end
-      new(created_at, uuid, value)
+      new(epoch, uuid, value)
     end
 
     def to_io(io)
       io.write_bytes(encoding_type.value)
-      io.write_bytes(created_at.epoch)
+      io.write_bytes(epoch)
       io.write_bytes(uuid)
       io.write_bytes(value.size)
       value.each do |string|

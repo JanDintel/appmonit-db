@@ -45,22 +45,22 @@ module Appmonit::DB
       buffer
     end
 
-    def read_values(block_stat : BlockStat, min_time : Time, max_time : Time) : Values
+    def read_values(block_stat : BlockStat, min_epoch : Int64, max_epoch : Int64) : Values
       encoded = read_block(block_stat.offset)
       values = Values.new
       Encoding.decode(encoded, block_stat.encoding_type).each do |value|
-        values << value if value.created_at >= min_time && value.created_at < max_time
+        values << value if value.epoch >= min_epoch && value.epoch < max_epoch
       end
       values
     end
 
-    def read_values(column_id, min_time : Time = Time::MinValue, max_time : Time = Time::MaxValue) : Values
+    def read_values(column_id, min_epoch : Int64 = Int64::MIN, max_epoch : Int64 = Int64::MAX) : Values
       block_stats = @collection_index.column_ids[column_id].block_stats
-      selected = block_stats.select(&.in_range(min_time, max_time))
+      selected = block_stats.select(&.in_range(min_epoch, max_epoch))
 
       values = Values.new
       selected.each do |block_stat|
-        values.concat(read_values(block_stat, min_time, max_time))
+        values.concat(read_values(block_stat, min_epoch, max_epoch))
       end
       values
     end
@@ -69,12 +69,12 @@ module Appmonit::DB
       @file.close
     end
 
-    def iterate(column_ids : Array(Int64), min_time, max_time)
-      RowIterator.new(self, column_ids, min_time, max_time)
+    def iterate(column_ids : Array(Int64), min_epoch, max_epoch)
+      RowIterator.new(self, column_ids, min_epoch, max_epoch)
     end
 
-    def iterate(column_id, min_time, max_time)
-      ColumnIterator.new(self, @collection_index.map_block_stats(column_id, min_time, max_time), min_time, max_time)
+    def iterate(column_id, min_epoch, max_epoch)
+      ColumnIterator.new(self, @collection_index.map_block_stats(column_id, min_epoch, max_epoch), min_epoch, max_epoch)
     end
 
     class RowIterator
@@ -82,17 +82,17 @@ module Appmonit::DB
 
       @iterators : Array(ADBReader::ColumnIterator)
       @next_values : Hash(Int32, Value)
-      @row_id : Tuple(Time, Int32)
+      @row_id : Tuple(Int64, Int32)
       @num_columns : Int32
 
-      def initialize(@adb_reader : ADBReader, @column_ids : Array(Int64), @min_time : Time, @max_time : Time)
+      def initialize(@adb_reader : ADBReader, @column_ids : Array(Int64), @min_epoch : Int64, @max_epoch : Int64)
         @next_values = {} of Int32 => Value
 
-        @row_id = {Time::MinValue, Int32::MIN}
+        @row_id = {Int64::MIN, Int32::MIN}
         @num_columns = @column_ids.size
         @current_row = Array(Value?).new(@num_columns)
 
-        @iterators = @column_ids.map { |id| @adb_reader.iterate(id, @min_time, @max_time) }
+        @iterators = @column_ids.map { |id| @adb_reader.iterate(id, @min_epoch, @max_epoch) }
       end
 
       def next
@@ -125,9 +125,16 @@ module Appmonit::DB
         @num_columns.times do |index|
           iterator = @iterators[index]
           unless @next_values[index]?
-            value = iterator.next
-            if value.is_a?(Value)
-              @next_values[index] = value
+            loop do
+              value = iterator.next
+              if value.is_a?(DB::Value)
+                if value.row_id > @row_id
+                  @next_values[index] = value
+                  break
+                end
+              else
+                break
+              end
             end
           end
         end
@@ -137,53 +144,62 @@ module Appmonit::DB
     class ColumnIterator
       include Iterator(Value)
 
-      @iterators : Array(Iterator(Value))
-      @next_values : Hash(Int32, Value)
-
-      def initialize(@adb_reader : ADBReader, @block_stats : Array(BlockStat), @min_time : Time, @max_time : Time)
-        @iterators = [] of Iterator(Value)
-        @next_values = {} of Int32 => Value
+      def initialize(@adb_reader : ADBReader, @block_stats : Array(BlockStat), @min_epoch : Int64, @max_epoch : Int64)
+        @current_values = Array(DB::Value).new(2000)
+        @values = Array(DB::Value).new(5000)
       end
 
       def next
-        load_values
+        if @current_values.empty?
+          load_values
+        end
 
-        if @next_values.any?
-          index, value = @next_values.min_by { |index, value| value.row_id }
-          @next_values.delete(index).not_nil!
+        if @current_values.any?
+          @current_values.pop
         else
           stop
         end
       end
 
       private def load_values
-        if @iterators.empty?
-          load_iterators
+        if @block_stats.empty?
+          @current_values = @values.sort! { |a, b| b.row_id <=> a.row_id }
+          @values.clear
+          return
         end
 
-        @iterators.each_with_index do |iterator, index|
-          unless @next_values[index]?
-            iterator.each do |value|
-              if value.created_at >= @min_time && value.created_at <= @max_time
-                @next_values[index] = value
-                break
+        current_block = @block_stats.pop
+
+        @values.reject! do |value|
+          if value.epoch >= @min_epoch && value.epoch < @max_epoch
+            @current_values << value
+            true
+          end
+        end
+
+        DB::Encoding.iterate(@adb_reader.read_block(current_block.offset), current_block.encoding_type).each do |value|
+          if value.epoch >= @min_epoch && value.epoch < @max_epoch
+            @current_values << value
+          else
+            @values << value
+          end
+        end
+
+        while @block_stats.any? && current_block.overlap?(@block_stats.last)
+          next_block = @block_stats.pop
+
+          DB::Encoding.iterate(@adb_reader.read_block(next_block.offset), next_block.encoding_type).each do |value|
+            if value.epoch >= @min_epoch && value.epoch < @max_epoch
+              if value.epoch <= current_block.max_epoch
+                @current_values << value
+              else
+                @values << value
               end
             end
           end
         end
-      end
 
-      private def load_iterators
-        return if @block_stats.empty?
-
-        current_block = @block_stats.shift
-        buffer = @adb_reader.read_block(current_block.offset)
-        @iterators << Encoding.iterate(buffer, current_block.encoding_type)
-        while @block_stats.any? && current_block.overlap?(@block_stats.first)
-          current_block = @block_stats.shift
-
-          @iterators << Encoding.iterate(@adb_reader.read_block(current_block.offset), current_block.encoding_type)
-        end
+        @current_values.sort! { |a, b| b.row_id <=> a.row_id }
       end
     end
   end

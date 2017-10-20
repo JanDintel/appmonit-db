@@ -49,8 +49,8 @@ module Appmonit::DB
       @column_ids = Hash(Int64, ColumnIndex).new { |h, k| h[k] = ColumnIndex.new(k) }
     end
 
-    def map_block_stats(column_id, min_time, max_time)
-      column_ids[column_id].block_stats.select(&.in_range(min_time, max_time)).sort_by(&.min_time)
+    def map_block_stats(column_id, min_epoch, max_epoch)
+      column_ids[column_id].block_stats.select(&.in_range(min_epoch, max_epoch)).sort! { |a, b| b.min_epoch <=> a.min_epoch }
     end
 
     def to_io(io)

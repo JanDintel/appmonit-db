@@ -2,7 +2,7 @@ module Appmonit::DB
   describe BlockStat do
     context "update" do
       it "return the blockstat with updated offset" do
-        values = Int64Values{Value[Time.epoch(1), 100, 0]}
+        values = Int64Values{Value[1_i64, 100, 0]}
         stat = BlockStat::Int64Values.new(values)
         stat.offset.should eq 0
 
@@ -13,48 +13,48 @@ module Appmonit::DB
 
     context "in range" do
       it "return true if the start and end time are in range" do
-        values = Int64Values{Value[Time.epoch(2), 100, 0], Value[Time.epoch(4), 100, 0]}
+        values = Int64Values{Value[2_i64, 100, 0], Value[4_i64, 100, 0]}
         stat = BlockStat::Int64Values.new(values)
-        stat.in_range(Time.epoch(0), Time.epoch(2)).should eq true
-        stat.in_range(Time.epoch(0), Time.epoch(3)).should eq true
-        stat.in_range(Time.epoch(0), Time.epoch(4)).should eq true
-        stat.in_range(Time.epoch(0), Time.epoch(5)).should eq true
-        stat.in_range(Time.epoch(2), Time.epoch(4)).should eq true
-        stat.in_range(Time.epoch(2), Time.epoch(5)).should eq true
-        stat.in_range(Time.epoch(3), Time.epoch(4)).should eq true
-        stat.in_range(Time.epoch(3), Time.epoch(5)).should eq true
-        stat.in_range(Time.epoch(4), Time.epoch(5)).should eq true
+        stat.in_range(0_i64, 2_i64).should eq true
+        stat.in_range(0_i64, 3_i64).should eq true
+        stat.in_range(0_i64, 4_i64).should eq true
+        stat.in_range(0_i64, 5_i64).should eq true
+        stat.in_range(2_i64, 4_i64).should eq true
+        stat.in_range(2_i64, 5_i64).should eq true
+        stat.in_range(3_i64, 4_i64).should eq true
+        stat.in_range(3_i64, 5_i64).should eq true
+        stat.in_range(4_i64, 5_i64).should eq true
       end
 
       it "return false if the start and end time are in range" do
-        values = Int64Values{Value[Time.epoch(2), 100, 0], Value[Time.epoch(4), 100, 0]}
+        values = Int64Values{Value[2_i64, 100, 0], Value[4_i64, 100, 0]}
         stat = BlockStat::Int64Values.new(values)
-        stat.in_range(Time.epoch(0), Time.epoch(1)).should eq false
-        stat.in_range(Time.epoch(5), Time.epoch(6)).should eq false
+        stat.in_range(0_i64, 1_i64).should eq false
+        stat.in_range(5_i64, 6_i64).should eq false
       end
     end
 
     context "from int64 values" do
       it "sets the size, min and max time" do
         values = Int64Values{
-          Value[Time.epoch(1), 100, 0],
-          Value[Time.epoch(0), 101, 1],
-          Value[Time.epoch(3), 102, 2],
-          Value[Time.epoch(2), 103, 3],
+          Value[1_i64, 100, 0],
+          Value[0_i64, 101, 1],
+          Value[3_i64, 102, 2],
+          Value[2_i64, 103, 3],
         }
         stat = BlockStat::Int64Values.new(values)
-        stat.min_time.should eq Time.epoch(0)
-        stat.max_time.should eq Time.epoch(3)
+        stat.min_epoch.should eq 0_i64
+        stat.max_epoch.should eq 3_i64
         stat.size.should eq 4
         values.size.should eq 4
       end
 
       it "sets the min, max and sum" do
         values = Int64Values{
-          Value[Time.epoch(1), 100, 0],
-          Value[Time.epoch(0), 101, 1],
-          Value[Time.epoch(3), 102, 2],
-          Value[Time.epoch(2), 103, 3],
+          Value[1_i64, 100, 0],
+          Value[0_i64, 101, 1],
+          Value[3_i64, 102, 2],
+          Value[2_i64, 103, 3],
         }
         stat = BlockStat::Int64Values.new(values)
         stat.min_value.should eq 0
@@ -66,24 +66,24 @@ module Appmonit::DB
     context "from float64 values" do
       it "sets the size, min and max time" do
         values = Float64Values{
-          Value[Time.epoch(1), 100, 0.0],
-          Value[Time.epoch(0), 101, 1.0],
-          Value[Time.epoch(3), 102, 2.0],
-          Value[Time.epoch(2), 103, 3.0],
+          Value[1_i64, 100, 0.0],
+          Value[0_i64, 101, 1.0],
+          Value[3_i64, 102, 2.0],
+          Value[2_i64, 103, 3.0],
         }
         stat = BlockStat::Float64Values.new(values)
-        stat.min_time.should eq Time.epoch(0)
-        stat.max_time.should eq Time.epoch(3)
+        stat.min_epoch.should eq 0_i64
+        stat.max_epoch.should eq 3_i64
         stat.size.should eq 4
         values.size.should eq 4
       end
 
       it "sets the min, max and sum" do
         values = Float64Values{
-          Value[Time.epoch(1), 100, 0.0],
-          Value[Time.epoch(0), 101, 1.0],
-          Value[Time.epoch(3), 102, 2.0],
-          Value[Time.epoch(2), 103, 3.0],
+          Value[1_i64, 100, 0.0],
+          Value[0_i64, 101, 1.0],
+          Value[3_i64, 102, 2.0],
+          Value[2_i64, 103, 3.0],
         }
         stat = BlockStat::Float64Values.new(values)
         stat.min_value.should eq 0
@@ -95,14 +95,14 @@ module Appmonit::DB
     context "from string values" do
       it "sets the size, min and max time" do
         values = StringValues{
-          Value[Time.epoch(1), 100, "a"],
-          Value[Time.epoch(0), 101, "b"],
-          Value[Time.epoch(3), 102, "aa"],
-          Value[Time.epoch(2), 103, "1"],
+          Value[1_i64, 100, "a"],
+          Value[0_i64, 101, "b"],
+          Value[3_i64, 102, "aa"],
+          Value[2_i64, 103, "1"],
         }
         stat = BlockStat::StringValues.new(values)
-        stat.min_time.should eq Time.epoch(0)
-        stat.max_time.should eq Time.epoch(3)
+        stat.min_epoch.should eq 0_i64
+        stat.max_epoch.should eq 3_i64
         stat.size.should eq 4
         values.size.should eq 4
       end
@@ -111,12 +111,12 @@ module Appmonit::DB
     context "from bool values" do
       it "sets the size, min and max time" do
         values = BoolValues{
-          Value[Time.epoch(1), 100, true],
-          Value[Time.epoch(0), 101, false],
+          Value[1_i64, 100, true],
+          Value[0_i64, 101, false],
         }
         stat = BlockStat::BoolValues.new(values)
-        stat.min_time.should eq Time.epoch(0)
-        stat.max_time.should eq Time.epoch(1)
+        stat.min_epoch.should eq 0_i64
+        stat.max_epoch.should eq 1_i64
         stat.size.should eq 2
         values.size.should eq 2
       end
@@ -125,14 +125,14 @@ module Appmonit::DB
     context "from array values" do
       it "sets the size, min and max time" do
         values = ArrayValues{
-          Value[Time.epoch(1), 100, ["a"]],
-          Value[Time.epoch(0), 101, ["b"]],
-          Value[Time.epoch(3), 102, ["aa"]],
-          Value[Time.epoch(2), 103, ["1"]],
+          Value[1_i64, 100, ["a"]],
+          Value[0_i64, 101, ["b"]],
+          Value[3_i64, 102, ["aa"]],
+          Value[2_i64, 103, ["1"]],
         }
         stat = BlockStat::ArrayValues.new(values)
-        stat.min_time.should eq Time.epoch(0)
-        stat.max_time.should eq Time.epoch(3)
+        stat.min_epoch.should eq 0_i64
+        stat.max_epoch.should eq 3_i64
         stat.size.should eq 4
         values.size.should eq 4
       end
@@ -142,8 +142,8 @@ module Appmonit::DB
       it "writes and reads BlockStat::Int64Values" do
         io = IO::Memory.new
         values = Int64Values{
-          Value[Time.epoch(1), 100, 0],
-          Value[Time.epoch(0), 101, 1],
+          Value[1_i64, 100, 0],
+          Value[0_i64, 101, 1],
         }
         BlockStat::Int64Values.new(values).to_io(io)
         io.rewind
@@ -154,8 +154,8 @@ module Appmonit::DB
       it "writes and reads BlockStat::Float64Values" do
         io = IO::Memory.new
         values = Float64Values{
-          Value[Time.epoch(1), 100, 0.0],
-          Value[Time.epoch(0), 101, 1.0],
+          Value[1_i64, 100, 0.0],
+          Value[0_i64, 101, 1.0],
         }
         BlockStat::Float64Values.new(values).to_io(io)
         io.rewind
@@ -166,8 +166,8 @@ module Appmonit::DB
       it "writes and reads BlockStat::BoolValues" do
         io = IO::Memory.new
         values = BoolValues{
-          Value[Time.epoch(1), 100, true],
-          Value[Time.epoch(0), 101, false],
+          Value[1_i64, 100, true],
+          Value[0_i64, 101, false],
         }
         BlockStat::BoolValues.new(values).to_io(io)
         io.rewind
@@ -178,8 +178,8 @@ module Appmonit::DB
       it "writes and reads BlockStat::StringValues" do
         io = IO::Memory.new
         values = StringValues{
-          Value[Time.epoch(1), 100, "1"],
-          Value[Time.epoch(0), 101, "2"],
+          Value[1_i64, 100, "1"],
+          Value[0_i64, 101, "2"],
         }
         BlockStat::StringValues.new(values).to_io(io)
         io.rewind
@@ -190,8 +190,8 @@ module Appmonit::DB
       it "writes and reads BlockStat::ArrayValues" do
         io = IO::Memory.new
         values = ArrayValues{
-          Value[Time.epoch(1), 100, ["0"]],
-          Value[Time.epoch(0), 101, ["1"]],
+          Value[1_i64, 100, ["0"]],
+          Value[0_i64, 101, ["1"]],
         }
         BlockStat::ArrayValues.new(values).to_io(io)
         io.rewind

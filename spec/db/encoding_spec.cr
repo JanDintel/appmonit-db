@@ -4,7 +4,7 @@ module Appmonit::DB
   describe "Encoding" do
     context "Int64 Encoding" do
       it "encodes and decodes Int64Values" do
-        values = Int64Values{Value[Time.epoch(0), 100, 1], Value[Time.epoch(1), 100, 1]}
+        values = Int64Values{Value[0_i64, 100, 1], Value[1_i64, 100, 1]}
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -13,14 +13,14 @@ module Appmonit::DB
         decoded.should eq values
 
         iterator = Encoding.iterate(encoded, EncodingType::Int64)
-        iterator.next.should eq Value[Time.epoch(0), 100, 1]
-        iterator.next.should eq Value[Time.epoch(1), 100, 1]
+        iterator.next.should eq Value[0_i64, 100, 1]
+        iterator.next.should eq Value[1_i64, 100, 1]
       end
     end
 
     context "Float64 Encoding" do
       it "encodes and decodes Float64Values" do
-        values = Float64Values{Value[Time.epoch(0), 100, 1.1], Value[Time.epoch(1), 100, 2.1]}
+        values = Float64Values{Value[0_i64, 100, 1.1], Value[1_i64, 100, 2.1]}
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -29,14 +29,14 @@ module Appmonit::DB
         decoded.should eq values
 
         iterator = Encoding.iterate(encoded, EncodingType::Float64)
-        iterator.next.should eq Value[Time.epoch(0), 100, 1.1]
-        iterator.next.should eq Value[Time.epoch(1), 100, 2.1]
+        iterator.next.should eq Value[0_i64, 100, 1.1]
+        iterator.next.should eq Value[1_i64, 100, 2.1]
       end
     end
 
     context "String Encoding" do
       it "encodes and decodes StringValues" do
-        values = StringValues{Value[Time.epoch(0), 100, "a"], Value[Time.epoch(1), 100, "b"]}
+        values = StringValues{Value[0_i64, 100, "a"], Value[1_i64, 100, "b"]}
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -45,14 +45,14 @@ module Appmonit::DB
         decoded.should eq values
 
         iterator = Encoding.iterate(encoded, EncodingType::String)
-        iterator.next.should eq Value[Time.epoch(0), 100, "a"]
-        iterator.next.should eq Value[Time.epoch(1), 100, "b"]
+        iterator.next.should eq Value[0_i64, 100, "a"]
+        iterator.next.should eq Value[1_i64, 100, "b"]
       end
     end
 
     context "Array Encoding" do
       it "encodes and decodes ArrayValues" do
-        values = ArrayValues{Value[Time.epoch(0), 100, ["a"]], Value[Time.epoch(1), 100, ["b"]]}
+        values = ArrayValues{Value[0_i64, 100, ["a"]], Value[1_i64, 100, ["b"]]}
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -61,14 +61,14 @@ module Appmonit::DB
         decoded.should eq values
 
         iterator = Encoding.iterate(encoded, EncodingType::Array)
-        iterator.next.should eq Value[Time.epoch(0), 100, ["a"]]
-        iterator.next.should eq Value[Time.epoch(1), 100, ["b"]]
+        iterator.next.should eq Value[0_i64, 100, ["a"]]
+        iterator.next.should eq Value[1_i64, 100, ["b"]]
       end
     end
 
     context "Bool Encoding" do
       it "encodes and decodes BoolValues" do
-        values = BoolValues{Value[Time.epoch(0), 100, true], Value[Time.epoch(1), 100, false]}
+        values = BoolValues{Value[0_i64, 100, true], Value[1_i64, 100, false]}
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -77,8 +77,8 @@ module Appmonit::DB
         decoded.should eq values
 
         iterator = Encoding.iterate(encoded, EncodingType::Bool)
-        iterator.next.should eq Value[Time.epoch(0), 100, true]
-        iterator.next.should eq Value[Time.epoch(1), 100, false]
+        iterator.next.should eq Value[0_i64, 100, true]
+        iterator.next.should eq Value[1_i64, 100, false]
       end
     end
   end

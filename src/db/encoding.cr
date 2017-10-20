@@ -29,7 +29,7 @@ module Appmonit::DB
       uuid_encoder = Int32Encoder.new
 
       values.each do |value|
-        timestamp_encoder << value.created_at.epoch
+        timestamp_encoder << value.epoch
         uuid_encoder << value.uuid
         encoder << value.value
       end
@@ -57,27 +57,27 @@ module Appmonit::DB
       when EncodingType::Int64
         values = Int64Decoder.decode(buffer)
         values.each do |value|
-          result << Int64Value.new(Time.epoch(timestamps.shift), uuids.shift, value)
+          result << Int64Value.new(timestamps.shift, uuids.shift, value)
         end
       when EncodingType::Float64
         values = Float64Decoder.decode(buffer)
         values.each do |value|
-          result << Float64Value.new(Time.epoch(timestamps.shift), uuids.shift, value)
+          result << Float64Value.new(timestamps.shift, uuids.shift, value)
         end
       when EncodingType::Bool
         values = BoolDecoder.decode(buffer)
         values.each do |value|
-          result << BoolValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
+          result << BoolValue.new(timestamps.shift, uuids.shift, value)
         end
       when EncodingType::String
         values = StringDecoder.decode(buffer)
         values.each do |value|
-          result << StringValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
+          result << StringValue.new(timestamps.shift, uuids.shift, value)
         end
       when EncodingType::Array
         values = ArrayDecoder.decode(buffer)
         values.each do |value|
-          result << ArrayValue.new(Time.epoch(timestamps.shift), uuids.shift, value)
+          result << ArrayValue.new(timestamps.shift, uuids.shift, value)
         end
       else
         raise "invalid encoding type"
@@ -122,7 +122,7 @@ module Appmonit::DB
         uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Int64)
-          Int64Value.new(Time.epoch(timestamp), uuid, value)
+          Int64Value.new(timestamp, uuid, value)
         else
           stop
         end
@@ -148,7 +148,7 @@ module Appmonit::DB
         uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Float64)
-          Float64Value.new(Time.epoch(timestamp), uuid, value)
+          Float64Value.new(timestamp, uuid, value)
         else
           stop
         end
@@ -174,7 +174,7 @@ module Appmonit::DB
         uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Bool)
-          BoolValue.new(Time.epoch(timestamp), uuid, value)
+          BoolValue.new(timestamp, uuid, value)
         else
           stop
         end
@@ -200,7 +200,7 @@ module Appmonit::DB
         uuid = @uuids.shift
         value = @values.next
         if value.is_a?(String)
-          StringValue.new(Time.epoch(timestamp), uuid, value)
+          StringValue.new(timestamp, uuid, value)
         else
           stop
         end
@@ -226,7 +226,7 @@ module Appmonit::DB
         uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Array(String))
-          ArrayValue.new(Time.epoch(timestamp), uuid, value)
+          ArrayValue.new(timestamp, uuid, value)
         else
           stop
         end

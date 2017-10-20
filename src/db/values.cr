@@ -47,8 +47,8 @@ module Appmonit::DB
         super
       end
 
-      def crop!(min_time, max_time)
-        self.select! { |value| value.created_at >= min_time && value.created_at < max_time }
+      def crop!(min_epoch, max_epoch)
+        self.select! { |value| value.epoch >= min_epoch && value.epoch < max_epoch }
       end
 
       def encoding_type
@@ -56,7 +56,7 @@ module Appmonit::DB
       end
 
       def sort
-        sort_by(&.created_at)
+        sort_by(&.epoch)
       end
 
       def to_io(io)

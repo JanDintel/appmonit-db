@@ -5,11 +5,11 @@ module Appmonit::DB
     context "serialization" do
       it "can write and read from io" do
         values = Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(0), 100, 1.1],
-          Value[Time.epoch(0), 100, true],
-          Value[Time.epoch(0), 100, "a"],
-          Value[Time.epoch(0), 100, ["a"]],
+          Value[0_i64, 100, 1],
+          Value[0_i64, 100, 1.1],
+          Value[0_i64, 100, true],
+          Value[0_i64, 100, "a"],
+          Value[0_i64, 100, ["a"]],
         }
 
         io = IO::Memory.new
@@ -21,28 +21,28 @@ module Appmonit::DB
 
     it "crops the values" do
       values = Int64Values{
-        Value[Time.epoch(0), 100, 1],
-        Value[Time.epoch(1), 100, 1],
-        Value[Time.epoch(2), 100, 1],
-        Value[Time.epoch(3), 100, 1],
-        Value[Time.epoch(4), 100, 1],
+        Value[0_i64, 100, 1],
+        Value[1_i64, 100, 1],
+        Value[2_i64, 100, 1],
+        Value[3_i64, 100, 1],
+        Value[4_i64, 100, 1],
       }
 
-      values.crop!(Time.epoch(1), Time.epoch(3))
+      values.crop!(1_i64, 3_i64)
       values.should eq Int64Values{
-        Value[Time.epoch(1), 100, 1],
-        Value[Time.epoch(2), 100, 1],
+        Value[1_i64, 100, 1],
+        Value[2_i64, 100, 1],
       }
     end
 
     context "{}" do
       it "accepts values from different types" do
         values = Values{
-          Value[Time.epoch(0), 100, 1],
-          Value[Time.epoch(0), 100, 1.1],
-          Value[Time.epoch(0), 100, true],
-          Value[Time.epoch(0), 100, "a"],
-          Value[Time.epoch(0), 100, ["a"]],
+          Value[0_i64, 100, 1],
+          Value[0_i64, 100, 1.1],
+          Value[0_i64, 100, true],
+          Value[0_i64, 100, "a"],
+          Value[0_i64, 100, ["a"]],
         }
 
         values[0].should be_a(Int64Value)
@@ -55,7 +55,7 @@ module Appmonit::DB
 
     context "Int64Values" do
       it "contains only Int64" do
-        values = Int64Values{Value[Time.epoch(0), 100, 1], Value[Time.epoch(0), 100, 1]}
+        values = Int64Values{Value[0_i64, 100, 1], Value[0_i64, 100, 1]}
 
         values.first.should be_a(Int64Value)
         values.last.should be_a(Int64Value)
@@ -63,14 +63,14 @@ module Appmonit::DB
 
       it "raises when trying to set a non Int64Value" do
         expect_raises do
-          Int64Values{Value[Time.epoch(0), 100, "a"]}
+          Int64Values{Value[0_i64, 100, "a"]}
         end
       end
     end
 
     context "Float64Values" do
       it "contains only Float64" do
-        values = Float64Values{Value[Time.epoch(0), 100, 1.1], Value[Time.epoch(0), 100, 1.1]}
+        values = Float64Values{Value[0_i64, 100, 1.1], Value[0_i64, 100, 1.1]}
 
         values.first.should be_a(Float64Value)
         values.last.should be_a(Float64Value)
@@ -78,14 +78,14 @@ module Appmonit::DB
 
       it "raises when trying to set a non Float64Value" do
         expect_raises do
-          Float64Values{Value[Time.epoch(0), 100, "a"]}
+          Float64Values{Value[0_i64, 100, "a"]}
         end
       end
     end
 
     context "BoolValues" do
       it "contains only Bool" do
-        values = BoolValues{Value[Time.epoch(0), 100, true], Value[Time.epoch(0), 100, false]}
+        values = BoolValues{Value[0_i64, 100, true], Value[0_i64, 100, false]}
 
         values.first.should be_a(BoolValue)
         values.last.should be_a(BoolValue)
@@ -93,14 +93,14 @@ module Appmonit::DB
 
       it "raises when trying to set a non BoolValue" do
         expect_raises do
-          BoolValues{Value[Time.epoch(0), 100, "a"]}
+          BoolValues{Value[0_i64, 100, "a"]}
         end
       end
     end
 
     context "StringValues" do
       it "contains only String" do
-        values = StringValues{Value[Time.epoch(0), 100, "a"], Value[Time.epoch(0), 100, "a"]}
+        values = StringValues{Value[0_i64, 100, "a"], Value[0_i64, 100, "a"]}
 
         values.first.should be_a(StringValue)
         values.last.should be_a(StringValue)
@@ -108,14 +108,14 @@ module Appmonit::DB
 
       it "raises when trying to set a non StringValue" do
         expect_raises do
-          StringValues{Value[Time.epoch(0), 100, 1]}
+          StringValues{Value[0_i64, 100, 1]}
         end
       end
     end
 
     context "ArrayValues" do
       it "contains only Array" do
-        values = ArrayValues{Value[Time.epoch(0), 100, ["a"]], Value[Time.epoch(0), 100, ["a"]]}
+        values = ArrayValues{Value[0_i64, 100, ["a"]], Value[0_i64, 100, ["a"]]}
 
         values.first.should be_a(ArrayValue)
         values.last.should be_a(ArrayValue)
@@ -123,7 +123,7 @@ module Appmonit::DB
 
       it "raises when trying to set a non ArrayValue" do
         expect_raises do
-          ArrayValues{Value[Time.epoch(0), 100, "a"]}
+          ArrayValues{Value[0_i64, 100, "a"]}
         end
       end
     end

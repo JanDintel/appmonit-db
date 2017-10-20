@@ -11,7 +11,7 @@ module Appmonit::DB
     context "serialization" do
       it "can write to io" do
         io = IO::Memory.new
-        block_stat = BlockStat::BoolValues.new(0, 1, Time.epoch(0), Time.epoch(1))
+        block_stat = BlockStat::BoolValues.new(0, 1, 0_i64, 1_i64)
         column_index = ColumnIndex.new(1_i64)
         column_index.block_stats << block_stat
         column_index.to_io(io)

@@ -1,28 +1,28 @@
 module Appmonit::DB
   module BlockStat
     getter size : Int32
-    getter min_time : Time
-    getter max_time : Time
+    getter min_epoch : Int64
+    getter max_epoch : Int64
     property offset : Int64
 
     def self.from_io(io)
       type = EncodingType.from_value(io.read_bytes(Int32))
       offset = io.read_bytes(Int64)
       size = io.read_bytes(Int32)
-      min_time = Time.epoch(io.read_bytes(Int64))
-      max_time = Time.epoch(io.read_bytes(Int64))
+      min_epoch = io.read_bytes(Int64)
+      max_epoch = io.read_bytes(Int64)
 
       case type
       when EncodingType::Int64
-        BlockStat::Int64Values.from_io(io, offset, size, min_time, max_time)
+        BlockStat::Int64Values.from_io(io, offset, size, min_epoch, max_epoch)
       when EncodingType::Float64
-        BlockStat::Float64Values.from_io(io, offset, size, min_time, max_time)
+        BlockStat::Float64Values.from_io(io, offset, size, min_epoch, max_epoch)
       when EncodingType::String
-        BlockStat::StringValues.from_io(io, offset, size, min_time, max_time)
+        BlockStat::StringValues.from_io(io, offset, size, min_epoch, max_epoch)
       when EncodingType::Bool
-        BlockStat::BoolValues.new(offset, size, min_time, max_time)
+        BlockStat::BoolValues.new(offset, size, min_epoch, max_epoch)
       when EncodingType::Array
-        BlockStat::ArrayValues.new(offset, size, min_time, max_time)
+        BlockStat::ArrayValues.new(offset, size, min_epoch, max_epoch)
       else
         raise "Invalid encoding type"
       end
@@ -46,15 +46,15 @@ module Appmonit::DB
     end
 
     def range
-      (self.min_time..self.max_time)
+      (self.min_epoch..self.max_epoch)
     end
 
     def in_range(start_time, end_time)
-      {min_time, start_time}.max <= {max_time, end_time}.min
+      {min_epoch, start_time}.max <= {max_epoch, end_time}.min
     end
 
     def overlap?(other : BlockStat)
-      min_time == other.min_time || (max_time >= other.min_time && min_time <= other.max_time)
+      min_epoch == other.min_epoch || (max_epoch >= other.min_epoch && min_epoch <= other.max_epoch)
     end
 
     def update(offset)
@@ -66,15 +66,15 @@ module Appmonit::DB
       io.write_bytes(encoding_type.value)
       io.write_bytes(offset)
       io.write_bytes(size)
-      io.write_bytes(min_time.epoch)
-      io.write_bytes(max_time.epoch)
+      io.write_bytes(min_epoch)
+      io.write_bytes(max_epoch)
     end
   end
 
   struct BlockStat::BoolValues
     include BlockStat
 
-    def initialize(offset, @size, @min_time, @max_time)
+    def initialize(offset, @size, @min_epoch, @max_epoch)
       @offset = offset.to_i64
     end
 
@@ -82,15 +82,15 @@ module Appmonit::DB
       @offset = 0_i64
       @size = values.size
       first_value = values[0]
-      @min_time = first_value.created_at
-      @max_time = first_value.created_at
+      @min_epoch = first_value.epoch
+      @max_epoch = first_value.epoch
 
       # iterate over the values only once and skip the first
       # Don't use shift because it copies the array.
       1.upto(values.size - 1) do |index|
         value = values[index]
-        @min_time = {@min_time, value.created_at}.min
-        @max_time = {@max_time, value.created_at}.max
+        @min_epoch = {@min_epoch, value.epoch}.min
+        @max_epoch = {@max_epoch, value.epoch}.max
       end
     end
 
@@ -102,7 +102,7 @@ module Appmonit::DB
   struct BlockStat::ArrayValues
     include BlockStat
 
-    def initialize(offset, @size, @min_time, @max_time)
+    def initialize(offset, @size, @min_epoch, @max_epoch)
       @offset = offset.to_i64
     end
 
@@ -110,14 +110,14 @@ module Appmonit::DB
       @offset = 0_i64
       @size = values.size
       first_value = values[0]
-      @min_time = first_value.created_at
-      @max_time = first_value.created_at
+      @min_epoch = first_value.epoch
+      @max_epoch = first_value.epoch
 
       # iterate over the values only once
       1.upto(values.size - 1) do |index|
         value = values[index]
-        @min_time = {@min_time, value.created_at}.min
-        @max_time = {@max_time, value.created_at}.max
+        @min_epoch = {@min_epoch, value.epoch}.min
+        @max_epoch = {@max_epoch, value.epoch}.max
       end
     end
 
@@ -133,14 +133,14 @@ module Appmonit::DB
     getter max_value : Int64
     getter sum_value : Int64
 
-    def self.from_io(io, offset, size, min_time, max_time)
+    def self.from_io(io, offset, size, min_epoch, max_epoch)
       min_value = io.read_bytes(Int64)
       max_value = io.read_bytes(Int64)
       sum_value = io.read_bytes(Int64)
-      self.new(offset, size, min_time, max_time, min_value, max_value, sum_value)
+      self.new(offset, size, min_epoch, max_epoch, min_value, max_value, sum_value)
     end
 
-    def initialize(offset, @size, @min_time, @max_time, @min_value, @max_value, @sum_value)
+    def initialize(offset, @size, @min_epoch, @max_epoch, @min_value, @max_value, @sum_value)
       @offset = offset.to_i64
     end
 
@@ -150,8 +150,8 @@ module Appmonit::DB
 
       first_value = values[0]
 
-      @min_time = first_value.created_at
-      @max_time = first_value.created_at
+      @min_epoch = first_value.epoch
+      @max_epoch = first_value.epoch
       @min_value = first_value.value
       @max_value = first_value.value
       @sum_value = first_value.value
@@ -160,8 +160,8 @@ module Appmonit::DB
       1.upto(values.size - 1) do |index|
         value = values[index]
         @sum_value += value.value
-        @min_time = {@min_time, value.created_at}.min
-        @max_time = {@max_time, value.created_at}.max
+        @min_epoch = {@min_epoch, value.epoch}.min
+        @max_epoch = {@max_epoch, value.epoch}.max
         @min_value = {@min_value, value.value}.min
         @max_value = {@max_value, value.value}.max
       end
@@ -186,14 +186,14 @@ module Appmonit::DB
     getter max_value : Float64
     getter sum_value : Float64
 
-    def self.from_io(io, offset, size, min_time, max_time)
+    def self.from_io(io, offset, size, min_epoch, max_epoch)
       min_value = io.read_bytes(Float64)
       max_value = io.read_bytes(Float64)
       sum_value = io.read_bytes(Float64)
-      self.new(offset, size, min_time, max_time, min_value, max_value, sum_value)
+      self.new(offset, size, min_epoch, max_epoch, min_value, max_value, sum_value)
     end
 
-    def initialize(offset, @size, @min_time, @max_time, @min_value, @max_value, @sum_value)
+    def initialize(offset, @size, @min_epoch, @max_epoch, @min_value, @max_value, @sum_value)
       @offset = offset.to_i64
     end
 
@@ -203,8 +203,8 @@ module Appmonit::DB
 
       first_value = values[0]
 
-      @min_time = first_value.created_at
-      @max_time = first_value.created_at
+      @min_epoch = first_value.epoch
+      @max_epoch = first_value.epoch
       @min_value = first_value.value
       @max_value = first_value.value
       @sum_value = first_value.value
@@ -213,8 +213,8 @@ module Appmonit::DB
       1.upto(values.size - 1) do |index|
         value = values[index]
         @sum_value += value.value
-        @min_time = {@min_time, value.created_at}.min
-        @max_time = {@max_time, value.created_at}.max
+        @min_epoch = {@min_epoch, value.epoch}.min
+        @max_epoch = {@max_epoch, value.epoch}.max
         @min_value = {@min_value, value.value}.min
         @max_value = {@max_value, value.value}.max
       end
@@ -235,11 +235,11 @@ module Appmonit::DB
   struct BlockStat::StringValues
     include BlockStat
 
-    def self.from_io(io, offset, size, min_time, max_time)
-      self.new(offset, size, min_time, max_time)
+    def self.from_io(io, offset, size, min_epoch, max_epoch)
+      self.new(offset, size, min_epoch, max_epoch)
     end
 
-    def initialize(offset, @size, @min_time, @max_time)
+    def initialize(offset, @size, @min_epoch, @max_epoch)
       @offset = offset.to_i64
     end
 
@@ -249,14 +249,14 @@ module Appmonit::DB
 
       first_value = values[0]
 
-      @min_time = first_value.created_at
-      @max_time = first_value.created_at
+      @min_epoch = first_value.epoch
+      @max_epoch = first_value.epoch
 
       # iterate over the values only once
       1.upto(values.size - 1) do |index|
         value = values[index]
-        @min_time = {@min_time, value.created_at}.min
-        @max_time = {@max_time, value.created_at}.max
+        @min_epoch = {@min_epoch, value.epoch}.min
+        @max_epoch = {@max_epoch, value.epoch}.max
       end
     end
 
