@@ -56,28 +56,28 @@ module Appmonit::DB
       case type
       when EncodingType::Int64
         values = Int64Decoder.decode(buffer)
-        values.each do |value|
-          result << Int64Value.new(timestamps.shift, uuids.shift, value)
+        values.each_with_index do |value, index|
+          result << Int64Value.new(timestamps[index], uuids[index], value)
         end
       when EncodingType::Float64
         values = Float64Decoder.decode(buffer)
-        values.each do |value|
-          result << Float64Value.new(timestamps.shift, uuids.shift, value)
+        values.each_with_index do |value, index|
+          result << Float64Value.new(timestamps[index], uuids[index], value)
         end
       when EncodingType::Bool
         values = BoolDecoder.decode(buffer)
-        values.each do |value|
-          result << BoolValue.new(timestamps.shift, uuids.shift, value)
+        values.each_with_index do |value, index|
+          result << BoolValue.new(timestamps[index], uuids[index], value)
         end
       when EncodingType::String
         values = StringDecoder.decode(buffer)
-        values.each do |value|
-          result << StringValue.new(timestamps.shift, uuids.shift, value)
+        values.each_with_index do |value, index|
+          result << StringValue.new(timestamps[index], uuids[index], value)
         end
       when EncodingType::Array
         values = ArrayDecoder.decode(buffer)
-        values.each do |value|
-          result << ArrayValue.new(timestamps.shift, uuids.shift, value)
+        values.each_with_index do |value, index|
+          result << ArrayValue.new(timestamps[index], uuids[index], value)
         end
       else
         raise "invalid encoding type"
@@ -114,14 +114,16 @@ module Appmonit::DB
         @timestamps = Int64Decoder.decode(buffer)
         @uuids = Int32Decoder.decode(buffer)
         @values = Int64Iterator.new(buffer)
+        @pos = 0
       end
 
       def next
         return stop if @timestamps.empty?
-        timestamp = @timestamps.shift
-        uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Int64)
+          timestamp = @timestamps[@pos]
+          uuid = @uuids[@pos]
+          @pos += 1
           Int64Value.new(timestamp, uuid, value)
         else
           stop
@@ -140,14 +142,16 @@ module Appmonit::DB
         @timestamps = Int64Decoder.decode(buffer)
         @uuids = Int32Decoder.decode(buffer)
         @values = Float64Iterator.new(buffer)
+        @pos = 0
       end
 
       def next
         return stop if @timestamps.empty?
-        timestamp = @timestamps.shift
-        uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Float64)
+          timestamp = @timestamps[@pos]
+          uuid = @uuids[@pos]
+          @pos += 1
           Float64Value.new(timestamp, uuid, value)
         else
           stop
@@ -166,14 +170,16 @@ module Appmonit::DB
         @timestamps = Int64Decoder.decode(buffer)
         @uuids = Int32Decoder.decode(buffer)
         @values = BoolIterator.new(buffer)
+        @pos = 0
       end
 
       def next
         return stop if @timestamps.empty?
-        timestamp = @timestamps.shift
-        uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Bool)
+          timestamp = @timestamps[@pos]
+          uuid = @uuids[@pos]
+          @pos += 1
           BoolValue.new(timestamp, uuid, value)
         else
           stop
@@ -192,14 +198,16 @@ module Appmonit::DB
         @timestamps = Int64Decoder.decode(buffer)
         @uuids = Int32Decoder.decode(buffer)
         @values = StringIterator.new(buffer)
+        @pos = 0
       end
 
       def next
         return stop if @timestamps.empty?
-        timestamp = @timestamps.shift
-        uuid = @uuids.shift
         value = @values.next
         if value.is_a?(String)
+          timestamp = @timestamps[@pos]
+          uuid = @uuids[@pos]
+          @pos += 1
           StringValue.new(timestamp, uuid, value)
         else
           stop
@@ -218,14 +226,16 @@ module Appmonit::DB
         @timestamps = Int64Decoder.decode(buffer)
         @uuids = Int32Decoder.decode(buffer)
         @values = ArrayIterator.new(buffer)
+        @pos = 0
       end
 
       def next
         return stop if @timestamps.empty?
-        timestamp = @timestamps.shift
-        uuid = @uuids.shift
         value = @values.next
         if value.is_a?(Array(String))
+          timestamp = @timestamps[@pos]
+          uuid = @uuids[@pos]
+          @pos += 1
           ArrayValue.new(timestamp, uuid, value)
         else
           stop
