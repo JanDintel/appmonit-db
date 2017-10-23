@@ -55,8 +55,8 @@ module Appmonit::DB
         EncodingType::{{type.id}}
       end
 
-      def sort
-        sort_by(&.epoch)
+      def sort!
+        sort! { |a, b| b.row_id <=> a.row_id }
       end
 
       def to_io(io)
