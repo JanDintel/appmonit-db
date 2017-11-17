@@ -4,7 +4,7 @@ module Appmonit::DB
   describe "Encoding" do
     context "Int64 Encoding" do
       it "encodes and decodes Int64Values" do
-        values = Int64Values{Value[0_i64, 100, 1], Value[1_i64, 100, 1]}
+        values = [Value[0_i64, 100, 1], Value[1_i64, 100, 1]]
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -20,7 +20,7 @@ module Appmonit::DB
 
     context "Float64 Encoding" do
       it "encodes and decodes Float64Values" do
-        values = Float64Values{Value[0_i64, 100, 1.1], Value[1_i64, 100, 2.1]}
+        values = [Value[0_i64, 100, 1.1], Value[1_i64, 100, 2.1]]
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -36,7 +36,7 @@ module Appmonit::DB
 
     context "String Encoding" do
       it "encodes and decodes StringValues" do
-        values = StringValues{Value[0_i64, 100, "a"], Value[1_i64, 100, "b"]}
+        values = [Value[0_i64, 100, "a"], Value[1_i64, 100, "b"]]
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -52,7 +52,7 @@ module Appmonit::DB
 
     context "Array Encoding" do
       it "encodes and decodes ArrayValues" do
-        values = ArrayValues{Value[0_i64, 100, ["a"]], Value[1_i64, 100, ["b"]]}
+        values = [Value[0_i64, 100, ["a"]], Value[1_i64, 100, ["b"]]]
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)
@@ -68,7 +68,7 @@ module Appmonit::DB
 
     context "Bool Encoding" do
       it "encodes and decodes BoolValues" do
-        values = BoolValues{Value[0_i64, 100, true], Value[1_i64, 100, false]}
+        values = [Value[0_i64, 100, true], Value[1_i64, 100, false]]
 
         encoded = Encoding.encode(values)
         encoded.should be_a(Bytes)

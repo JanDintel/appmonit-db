@@ -17,7 +17,7 @@ module Appmonit::DB
     end
 
     it "reads the index" do
-      values = Int64Values{
+      values = Array(Int64Value){
         Value[0_i64, 100, 1],
         Value[1_i64, 101, 1],
         Value[2_i64, 102, 1],
@@ -37,7 +37,7 @@ module Appmonit::DB
 
     context "column_ids" do
       it "returns the columns ids" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -57,7 +57,7 @@ module Appmonit::DB
 
     context "read_block" do
       it "reads a block" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -79,21 +79,21 @@ module Appmonit::DB
 
     context "read_values" do
       it "reads all value types for a column" do
-        int64values = Int64Values{
+        int64values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
         }
         int64encoded = Encoding.encode(int64values)
 
-        float64values = Float64Values{
+        float64values = Array(Float64Value){
           Value[0_i64, 100, 1.0],
           Value[1_i64, 101, 1.1],
           Value[2_i64, 102, 1.2],
         }
         float64encoded = Encoding.encode(float64values)
 
-        string_values = StringValues{
+        string_values = Array(StringValue){
           Value[0_i64, 100, "a"],
           Value[1_i64, 101, "b"],
           Value[2_i64, 102, "c"],
@@ -108,13 +108,13 @@ module Appmonit::DB
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
           values = reader.read_values(1_i64)
-          values.should be_a(Values)
-          values.should eq int64values + float64values + string_values
+          values.should be_a(Array(Value))
+          values.should eq (int64values + float64values + string_values).sort_by(&.row_id)
         end
       end
 
       it "reads the values for a time range" do
-        int64values = Int64Values{
+        int64values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -127,15 +127,15 @@ module Appmonit::DB
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
           values = reader.read_values(1_i64, 2_i64, 3_i64)
-          values.should be_a(Values)
-          values.should eq Int64Values{
+          values.should be_a(Array(Value))
+          values.should eq Array(Int64Value){
             Value[2_i64, 102, 1],
           }
         end
       end
 
       it "iterates the values for a time range in order" do
-        int64values = Int64Values{
+        int64values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -143,7 +143,7 @@ module Appmonit::DB
         }
         int64encoded = Encoding.encode(int64values)
 
-        float64values = Float64Values{
+        float64values = Array(Float64Value){
           Value[2_i64, 100, 1.1],
           Value[3_i64, 100, 1.1],
         }
@@ -171,21 +171,21 @@ module Appmonit::DB
         end
 
         it "iterates the rows for a time ranges" do
-          int64values = DB::Int64Values{
+          int64values = Array(Int64Value){
             DB::Value[0_i64, 100, 1],
             DB::Value[1_i64, 101, 1],
             DB::Value[2_i64, 102, 1],
           }
           int64encoded = DB::Encoding.encode(int64values)
 
-          float64values = DB::Float64Values{
+          float64values = Array(Float64Value){
             DB::Value[0_i64, 100, 1.0],
             DB::Value[1_i64, 102, 1.1],
             DB::Value[2_i64, 103, 1.2],
           }
           float64encoded = DB::Encoding.encode(float64values)
 
-          string_values = DB::StringValues{
+          string_values = Array(StringValue){
             DB::Value[0_i64, 100, "a"],
             DB::Value[1_i64, 101, "b"],
             DB::Value[2_i64, 102, "c"],

@@ -45,24 +45,8 @@ module Appmonit::DB
       buffer
     end
 
-    def read_values(block_stat : BlockStat, min_epoch : Int64, max_epoch : Int64) : Values
-      encoded = read_block(block_stat.offset)
-      values = Values.new
-      Encoding.decode(encoded, block_stat.encoding_type).each do |value|
-        values << value if value.epoch >= min_epoch && value.epoch < max_epoch
-      end
-      values
-    end
-
-    def read_values(column_id, min_epoch : Int64 = Int64::MIN, max_epoch : Int64 = Int64::MAX) : Values
-      block_stats = @collection_index.column_ids[column_id].block_stats
-      selected = block_stats.select(&.in_range(min_epoch, max_epoch))
-
-      values = Values.new
-      selected.each do |block_stat|
-        values.concat(read_values(block_stat, min_epoch, max_epoch))
-      end
-      values
+    def read_values(column_id, min_epoch : Int64 = Int64::MIN, max_epoch : Int64 = Int64::MAX) : Array(Value)
+      iterate(column_id, min_epoch, max_epoch).to_a
     end
 
     def close

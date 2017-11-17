@@ -9,21 +9,27 @@ require "./value"
 
 module Appmonit::DB
   module Encoding
-    def self.encode(values : ValuesType)
-      buffer = IO::Memory.new
-
+    def self.encode(values)
       case values
-      when Int64Values
+      when Array(Int64Value)
         encoder = Int64Encoder.new
-      when Float64Values
+      when Array(Float64Value)
         encoder = Float64Encoder.new
-      when BoolValues
+      when Array(BoolValue)
         encoder = BoolEncoder.new
-      when ArrayValues
+      when Array(ArrayValue)
         encoder = ArrayEncoder.new
-      else
+      when Array(StringValue)
         encoder = StringEncoder.new
+      else
+        raise "Invalid encoding"
       end
+
+      encode(encoder, values)
+    end
+
+    def self.encode(encoder, values)
+      buffer = IO::Memory.new
 
       timestamp_encoder = Int64Encoder.new
       uuid_encoder = Int32Encoder.new
@@ -46,44 +52,8 @@ module Appmonit::DB
       buffer.to_slice
     end
 
-    def self.decode(encoded : Bytes, type : EncodingType, size = 2000) : ValuesType
-      buffer = IO::Memory.new(encoded)
-      timestamps = Int64Decoder.decode(buffer)
-      uuids = Int32Decoder.decode(buffer)
-
-      result = Values.create(type, size)
-
-      case type
-      when EncodingType::Int64
-        values = Int64Decoder.decode(buffer)
-        values.each_with_index do |value, index|
-          result << Int64Value.new(timestamps[index], uuids[index], value)
-        end
-      when EncodingType::Float64
-        values = Float64Decoder.decode(buffer)
-        values.each_with_index do |value, index|
-          result << Float64Value.new(timestamps[index], uuids[index], value)
-        end
-      when EncodingType::Bool
-        values = BoolDecoder.decode(buffer)
-        values.each_with_index do |value, index|
-          result << BoolValue.new(timestamps[index], uuids[index], value)
-        end
-      when EncodingType::String
-        values = StringDecoder.decode(buffer)
-        values.each_with_index do |value, index|
-          result << StringValue.new(timestamps[index], uuids[index], value)
-        end
-      when EncodingType::Array
-        values = ArrayDecoder.decode(buffer)
-        values.each_with_index do |value, index|
-          result << ArrayValue.new(timestamps[index], uuids[index], value)
-        end
-      else
-        raise "invalid encoding type"
-      end
-
-      result
+    def self.decode(encoded : Bytes, type : EncodingType) : ValuesType
+      iterate(encoded, type).to_a
     end
 
     def self.iterate(encoded : Bytes, type : EncodingType) : Iterator

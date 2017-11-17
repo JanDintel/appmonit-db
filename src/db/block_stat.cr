@@ -30,15 +30,15 @@ module Appmonit::DB
 
     def self.new(values : ValuesType)
       case values
-      when DB::Int64Values
+      when Array(Int64Value)
         BlockStat::Int64Values.new(values)
-      when DB::Float64Values
+      when Array(Float64Value)
         BlockStat::Float64Values.new(values)
-      when DB::BoolValues
+      when Array(BoolValue)
         BlockStat::BoolValues.new(values)
-      when DB::ArrayValues
+      when Array(ArrayValue)
         BlockStat::ArrayValues.new(values)
-      when DB::StringValues
+      when Array(StringValue)
         BlockStat::StringValues.new(values)
       else
         raise "Invalid values type #{values.class}"
@@ -78,7 +78,7 @@ module Appmonit::DB
       @offset = offset.to_i64
     end
 
-    def initialize(values : DB::BoolValues)
+    def initialize(values : Array(BoolValue))
       @offset = 0_i64
       @size = values.size
       first_value = values[0]
@@ -106,7 +106,7 @@ module Appmonit::DB
       @offset = offset.to_i64
     end
 
-    def initialize(values : DB::ArrayValues)
+    def initialize(values : Array(ArrayValue))
       @offset = 0_i64
       @size = values.size
       first_value = values[0]
@@ -144,7 +144,7 @@ module Appmonit::DB
       @offset = offset.to_i64
     end
 
-    def initialize(values : DB::Int64Values)
+    def initialize(values : Array(Int64Value))
       @offset = 0_i64
       @size = values.size
 
@@ -197,7 +197,7 @@ module Appmonit::DB
       @offset = offset.to_i64
     end
 
-    def initialize(values : DB::Float64Values)
+    def initialize(values : Array(Float64Value))
       @offset = 0_i64
       @size = values.size
 
@@ -243,7 +243,7 @@ module Appmonit::DB
       @offset = offset.to_i64
     end
 
-    def initialize(values : DB::StringValues)
+    def initialize(values : Array(StringValue))
       @offset = 0_i64
       @size = values.size
 

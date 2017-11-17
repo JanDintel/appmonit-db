@@ -13,7 +13,7 @@ module Appmonit::DB
     end
 
     it "writes the index when closed" do
-      values = Int64Values{
+      values = Array(Int64Value){
         Value[0_i64, 100, 1],
         Value[1_i64, 101, 1],
         Value[2_i64, 102, 1],
@@ -36,7 +36,7 @@ module Appmonit::DB
 
     context "write values" do
       it "write the checksum and the block" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -62,7 +62,7 @@ module Appmonit::DB
 
     context "write block" do
       it "writes a block to the file" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -85,7 +85,7 @@ module Appmonit::DB
       end
 
       it "raises when the file is not locked" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -133,7 +133,7 @@ module Appmonit::DB
       end
 
       it "appends a new block at the last known location" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[0_i64, 100, 1],
           Value[1_i64, 101, 1],
           Value[2_i64, 102, 1],
@@ -156,13 +156,13 @@ module Appmonit::DB
 
         ADBReader.open("/tmp/appmonit-db/1/0-60.adb") do |reader|
           values = reader.read_values(1_i64, 0_i64, 3_i64)
-          values.should be_a(Values)
-          values.should eq Int64Values{
+          values.should be_a(Array(Value))
+          values.should eq Array(Int64Value){
             Value[0_i64, 100, 1],
+            Value[0_i64, 100, 1],
+            Value[1_i64, 101, 1],
             Value[1_i64, 101, 1],
             Value[2_i64, 102, 1],
-            Value[0_i64, 100, 1],
-            Value[1_i64, 101, 1],
             Value[2_i64, 102, 1],
           }
         end
@@ -170,7 +170,7 @@ module Appmonit::DB
     end
 
     it "creates a new shard if the index is missing" do
-      values = Int64Values{
+      values = Array(Int64Value){
         Value[0_i64, 100, 1],
         Value[1_i64, 101, 1],
         Value[2_i64, 102, 1],

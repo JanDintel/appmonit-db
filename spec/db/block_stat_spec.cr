@@ -2,7 +2,7 @@ module Appmonit::DB
   describe BlockStat do
     context "update" do
       it "return the blockstat with updated offset" do
-        values = Int64Values{Value[1_i64, 100, 0]}
+        values = Array(Int64Value){Value[1_i64, 100, 0]}
         stat = BlockStat::Int64Values.new(values)
         stat.offset.should eq 0
 
@@ -13,7 +13,7 @@ module Appmonit::DB
 
     context "in range" do
       it "return true if the start and end time are in range" do
-        values = Int64Values{Value[2_i64, 100, 0], Value[4_i64, 100, 0]}
+        values = Array(Int64Value){Value[2_i64, 100, 0], Value[4_i64, 100, 0]}
         stat = BlockStat::Int64Values.new(values)
         stat.in_range(0_i64, 2_i64).should eq true
         stat.in_range(0_i64, 3_i64).should eq true
@@ -27,7 +27,7 @@ module Appmonit::DB
       end
 
       it "return false if the start and end time are in range" do
-        values = Int64Values{Value[2_i64, 100, 0], Value[4_i64, 100, 0]}
+        values = Array(Int64Value){Value[2_i64, 100, 0], Value[4_i64, 100, 0]}
         stat = BlockStat::Int64Values.new(values)
         stat.in_range(0_i64, 1_i64).should eq false
         stat.in_range(5_i64, 6_i64).should eq false
@@ -36,7 +36,7 @@ module Appmonit::DB
 
     context "from int64 values" do
       it "sets the size, min and max time" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[1_i64, 100, 0],
           Value[0_i64, 101, 1],
           Value[3_i64, 102, 2],
@@ -50,7 +50,7 @@ module Appmonit::DB
       end
 
       it "sets the min, max and sum" do
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[1_i64, 100, 0],
           Value[0_i64, 101, 1],
           Value[3_i64, 102, 2],
@@ -65,7 +65,7 @@ module Appmonit::DB
 
     context "from float64 values" do
       it "sets the size, min and max time" do
-        values = Float64Values{
+        values = Array(Float64Value){
           Value[1_i64, 100, 0.0],
           Value[0_i64, 101, 1.0],
           Value[3_i64, 102, 2.0],
@@ -79,7 +79,7 @@ module Appmonit::DB
       end
 
       it "sets the min, max and sum" do
-        values = Float64Values{
+        values = Array(Float64Value){
           Value[1_i64, 100, 0.0],
           Value[0_i64, 101, 1.0],
           Value[3_i64, 102, 2.0],
@@ -94,7 +94,7 @@ module Appmonit::DB
 
     context "from string values" do
       it "sets the size, min and max time" do
-        values = StringValues{
+        values = Array(StringValue){
           Value[1_i64, 100, "a"],
           Value[0_i64, 101, "b"],
           Value[3_i64, 102, "aa"],
@@ -110,7 +110,7 @@ module Appmonit::DB
 
     context "from bool values" do
       it "sets the size, min and max time" do
-        values = BoolValues{
+        values = Array(BoolValue){
           Value[1_i64, 100, true],
           Value[0_i64, 101, false],
         }
@@ -124,7 +124,7 @@ module Appmonit::DB
 
     context "from array values" do
       it "sets the size, min and max time" do
-        values = ArrayValues{
+        values = Array(ArrayValue){
           Value[1_i64, 100, ["a"]],
           Value[0_i64, 101, ["b"]],
           Value[3_i64, 102, ["aa"]],
@@ -141,7 +141,7 @@ module Appmonit::DB
     context "encode and decode" do
       it "writes and reads BlockStat::Int64Values" do
         io = IO::Memory.new
-        values = Int64Values{
+        values = Array(Int64Value){
           Value[1_i64, 100, 0],
           Value[0_i64, 101, 1],
         }
@@ -153,7 +153,7 @@ module Appmonit::DB
 
       it "writes and reads BlockStat::Float64Values" do
         io = IO::Memory.new
-        values = Float64Values{
+        values = Array(Float64Value){
           Value[1_i64, 100, 0.0],
           Value[0_i64, 101, 1.0],
         }
@@ -165,7 +165,7 @@ module Appmonit::DB
 
       it "writes and reads BlockStat::BoolValues" do
         io = IO::Memory.new
-        values = BoolValues{
+        values = Array(BoolValue){
           Value[1_i64, 100, true],
           Value[0_i64, 101, false],
         }
@@ -177,7 +177,7 @@ module Appmonit::DB
 
       it "writes and reads BlockStat::StringValues" do
         io = IO::Memory.new
-        values = StringValues{
+        values = Array(StringValue){
           Value[1_i64, 100, "1"],
           Value[0_i64, 101, "2"],
         }
@@ -189,7 +189,7 @@ module Appmonit::DB
 
       it "writes and reads BlockStat::ArrayValues" do
         io = IO::Memory.new
-        values = ArrayValues{
+        values = Array(ArrayValue){
           Value[1_i64, 100, ["0"]],
           Value[0_i64, 101, ["1"]],
         }

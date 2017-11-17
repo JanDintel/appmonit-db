@@ -9,7 +9,7 @@ module Appmonit::DB
   VALUES_PER_BLOCK = 5000
 
   alias ValueType = Int64 | Float64 | String | Bool | Array(String)
-  alias ValuesType = Int64Values | Float64Values | BoolValues | StringValues | ArrayValues
+  alias ValuesType = Array(Int64Value) | Array(Float64Value) | Array(BoolValue) | Array(StringValue) | Array(ArrayValue)
 
   ADB_REGEX = /(?<root>.*)\/(?<collection>\d+)\/(?<min_epoch>\d+)-(?<max_epoch>\d+)\.adb/
 
