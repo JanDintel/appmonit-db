@@ -131,11 +131,17 @@ module Appmonit::DB
       def initialize(@adb_reader : ADBReader, @block_stats : Array(BlockStat), @min_epoch : Int64, @max_epoch : Int64)
         @current_values = Array(DB::Value).new(2000)
         @values = Array(DB::Value).new(5000)
+        @stop = false
+        @row_id = {Int64::MIN, Int32::MIN}
       end
 
       def next
         if @current_values.empty?
-          load_values
+          if @stop
+            stop
+          else
+            load_values
+          end
         end
 
         if @current_values.any?
@@ -148,7 +154,7 @@ module Appmonit::DB
       private def load_values
         if @block_stats.empty?
           @current_values = @values.sort! { |a, b| b.row_id <=> a.row_id }
-          @values.clear
+          @stop = true
           return
         end
 
@@ -156,16 +162,18 @@ module Appmonit::DB
 
         @values.reject! do |value|
           if value.epoch >= @min_epoch && value.epoch < @max_epoch
-            @current_values << value
-            true
+            if value.row_id > @row_id && value.row_id > @row_id
+              @current_values << value
+              @row_id = value.row_id
+              true
+            end
           end
         end
 
         DB::Encoding.iterate(@adb_reader.read_block(current_block.offset), current_block.encoding_type).each do |value|
-          if value.epoch >= @min_epoch && value.epoch < @max_epoch
+          if value.epoch >= @min_epoch && value.epoch < @max_epoch && value.row_id > @row_id
             @current_values << value
-          else
-            @values << value
+            @row_id = value.row_id
           end
         end
 
@@ -173,7 +181,8 @@ module Appmonit::DB
           next_block = @block_stats.pop
 
           DB::Encoding.iterate(@adb_reader.read_block(next_block.offset), next_block.encoding_type).each do |value|
-            if value.epoch >= @min_epoch && value.epoch < @max_epoch
+            if value.epoch >= @min_epoch && value.epoch < @max_epoch && value.row_id > @row_id
+              @row_id = value.row_id
               if value.epoch <= current_block.max_epoch
                 @current_values << value
               else

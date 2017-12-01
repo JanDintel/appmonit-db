@@ -159,10 +159,7 @@ module Appmonit::DB
           values.should be_a(Array(Value))
           values.should eq Array(Int64Value){
             Value[0_i64, 100, 1],
-            Value[0_i64, 100, 1],
             Value[1_i64, 101, 1],
-            Value[1_i64, 101, 1],
-            Value[2_i64, 102, 1],
             Value[2_i64, 102, 1],
           }
         end
